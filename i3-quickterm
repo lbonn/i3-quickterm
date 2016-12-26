@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import shlex
+import subprocess
+import sys
+
+import i3ipc
+
+
+# settings
+#MENU = ['dmenu']
+MENU = ['rofi', '-dmenu', '-p', 'quickterm: ', '-no-custom', '-auto-select']
+TERM = ['urxvt']
+RATIO = 0.25
+POS = 'top'
+SHELLS = {
+    # put your favourite shells here
+    'haskell': 'ghci',
+    'js': 'n_',
+    'python': 'ipython3 --no-banner',
+    'shell': os.environ.get('SHELL', 'bash'),
+    }
+
+
+MARK_QT_PATTERN = 'quickterm_.*'
+MARK_QT = 'quickterm_{}'
+
+
+def move_back(conn, selector):
+    conn.command('{} floating enable, move scratchpad'
+                 .format(selector))
+
+
+def pop_it(conn, mark_name):
+    ws, _ = get_current_workspace(conn)
+    wx, wy = ws['rect']['x'], ws['rect']['y']
+    wwidth, wheight = ws['rect']['width'], ws['rect']['height']
+
+    width = wwidth
+    height = int(wheight*RATIO)
+    posx = wx
+
+    if POS == 'bottom':
+        margin = 6
+        posy = wy + wheight - height - margin
+    else:  # POS == 'top'
+        posy = wy
+
+    conn.command('[con_mark={mark}],'
+                 'resize set {width} px {height} px,'
+                 'move absolute position {posx}px {posy}px,'
+                 'move scratchpad,'
+                 'scratchpad show'
+                 ''.format(mark=mark_name, posx=posx, posy=posy,
+                           width=width, height=height))
+
+
+def get_current_workspace(conn):
+    ws = [w for w in conn.get_workspaces() if w['focused']][0]
+    tree = conn.get_tree()
+
+    # wname = workspace['name']
+    ws_tree = [c for c in tree.descendents()
+               if c.type == 'workspace' and c.name == ws['name']][0]
+
+    return ws, ws_tree
+
+
+def toggle_quickterm_select():
+    """Hide a quickterm visible on current workspace or prompt
+    the user for a shell type"""
+    conn = i3ipc.Connection()
+    ws, ws_tree = get_current_workspace(conn)
+
+    # is there a quickterm opened in the current workspace?
+    qt = ws_tree.find_marked(MARK_QT_PATTERN)
+    if qt:
+        qt = qt[0]
+        move_back(conn, '[con_id={}]'.format(qt.id))
+        return
+
+    proc = subprocess.Popen(MENU, stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE)
+    for r in sorted(SHELLS.keys()):
+        proc.stdin.write((r + '\n').encode())
+    stdout, _ = proc.communicate()
+
+    shell = stdout.decode().strip()
+
+    if shell not in SHELLS:
+        return
+
+    toggle_quickterm(shell)
+
+
+def toggle_quickterm(shell):
+    conn = i3ipc.Connection()
+    tree = conn.get_tree()
+    shell_mark = MARK_QT.format(shell)
+    qt = tree.find_marked(shell_mark)
+
+    # does it exist already?
+    if len(qt) == 0:
+        subprocess.call(TERM + ['-e', sys.argv[0], '-i', shell])
+    else:
+        qt = qt[0]
+        ws, ws_tree = get_current_workspace(conn)
+
+        move_back(conn, '[con_id={}]'.format(qt.id))
+        if qt.workspace().name != ws.name:
+            pop_it(conn, shell_mark)
+
+
+def launch_inplace(shell):
+    conn = i3ipc.Connection()
+    shell_mark = MARK_QT.format(shell)
+    conn.command('mark {}'.format(shell_mark))
+    move_back(conn, '[con_mark={}]'.format(shell_mark))
+    pop_it(conn, shell_mark)
+    prog_cmd = shlex.split(SHELLS[shell])
+    subprocess.call(prog_cmd)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--in-place', dest='in_place',
+                        action='store_true')
+    parser.add_argument('shell', metavar='SHELL', nargs='?')
+    args = parser.parse_args()
+
+    if args.shell is None:
+        toggle_quickterm_select()
+        sys.exit(0)
+
+    if args.shell not in SHELLS:
+        print('unknown shell {}'.format(args.shell), file=sys.stderr)
+        sys.exit(1)
+
+    if args.in_place:
+        launch_inplace(args.shell)
+    else:
+        toggle_quickterm(args.shell)
