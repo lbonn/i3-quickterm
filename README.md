@@ -55,3 +55,11 @@ SHELLS = {
     'shell': os.environ.get('SHELL', 'bash'),
     }
 ```
+
+Requirements
+------------
+
+* python 3
+* i3 >= v3.11
+* [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/)
+* dmenu or rofi (optional)
