@@ -51,7 +51,7 @@ RATIO = 0.25
 POS = 'top'
 SHELLS = {
     'haskell': 'ghci',
-    'js': 'n_',
+    'js': 'node',
     'python': 'ipython3 --no-banner',
     'shell': os.environ.get('SHELL', 'bash'),
     }
