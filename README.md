@@ -34,27 +34,29 @@ bindsym $mod+b exec i3_quickterm bash
 Configuration
 -------------
 
-The configuration is done directly in the source for the moment:
+The configuration is read from `~/.config/i3/i3-quickterm.json`.
 
-* `MENU`: the dmenu-compatible application used to select the shell
-* `TERM`: the terminal emulator of choice
-* `RATIO`: the percentage of the screen height to use
-* `POS`: where to pop the terminal (`top` or `bottom`)
-* `SHELLS`: registered shells
+* `menu`: the dmenu-compatible application used to select the shell
+* `term`: the terminal emulator of choice
+* `ratio`: the percentage of the screen height to use
+* `pos`: where to pop the terminal (`top` or `bottom`)
+* `shells`: registered shells (`{ name: command }`)
 
-The defaults are:
+Unspecified keys are inherited from the defaults:
 
 ```
-MENU = ['rofi', '-dmenu', '-p', 'quickterm: ', '-no-custom', '-auto-select']
-TERM = ['urxvt']
-RATIO = 0.25
-POS = 'top'
-SHELLS = {
+{
+  'menu': 'rofi -dmenu -p "quickterm: " -no-custom -auto-select',
+  'term': 'urxvt',
+  'ratio': 0.25,
+  'pos': 'top',
+  'shells': {
     'haskell': 'ghci',
     'js': 'node',
     'python': 'ipython3 --no-banner',
     'shell': os.environ.get('SHELL', 'bash'),
-    }
+  }
+}
 ```
 
 Requirements
