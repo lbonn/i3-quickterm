@@ -155,7 +155,7 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if args.shell not in conf['shells']:
-        print('unknown shell {}'.format(args.shell), file=sys.stderr)
+        print('unknown shell: {}'.format(args.shell), file=sys.stderr)
         sys.exit(1)
 
     if args.in_place:
