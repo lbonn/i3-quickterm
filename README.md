@@ -42,20 +42,24 @@ The configuration is read from `~/.config/i3/i3-quickterm.json`.
 * `pos`: where to pop the terminal (`top` or `bottom`)
 * `shells`: registered shells (`{ name: command }`)
 
+`menu`, `term` and `shell` can contain placeholders for environment variables:
+`{$var}`. `term` can also contain the `{title}` placeholder to set the window
+title of the terminal.
+
 Unspecified keys are inherited from the defaults:
 
 ```
 {
-  'menu': 'rofi -dmenu -p "quickterm: " -no-custom -auto-select',
-  'term': 'urxvt',
-  'ratio': 0.25,
-  'pos': 'top',
-  'shells': {
-    'haskell': 'ghci',
-    'js': 'node',
-    'python': 'ipython3 --no-banner',
-    'shell': os.environ.get('SHELL', 'bash'),
-  }
+    'menu': 'rofi -dmenu -p "quickterm: " -no-custom -auto-select',
+    'term': 'urxvt -title "{title}"',
+    'ratio': 0.25,
+    'pos': 'top',
+    'shells': {
+        'haskell': 'ghci',
+        'js': 'node',
+        'python': 'ipython3 --no-banner',
+        'shell': '{$SHELL}',
+    }
 }
 ```
 

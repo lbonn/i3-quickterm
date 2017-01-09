@@ -17,14 +17,14 @@ MARK_QT = 'quickterm_{}'
 
 DEFAULT_CONF = {
     'menu': 'rofi -dmenu -p "quickterm: " -no-custom -auto-select',
-    'term': 'urxvt',
+    'term': 'urxvt -title "{title}"',
     'ratio': 0.25,
     'pos': 'top',
     'shells': {
         'haskell': 'ghci',
         'js': 'node',
         'python': 'ipython3 --no-banner',
-        'shell': os.environ.get('SHELL', 'bash'),
+        'shell': '{$SHELL}',
     }
 }
 
@@ -43,6 +43,11 @@ def read_conf(fn):
         return c
     except Exception as e:
         return {}
+
+
+def expand_command(cmd, **kwargs):
+    environ_prefixed = {'$' + k: v for k, v in os.environ.items()}
+    return shlex.split(cmd.format(**kwargs, **environ_prefixed))
 
 
 def move_back(conn, selector):
@@ -98,7 +103,8 @@ def toggle_quickterm_select(conf):
         move_back(conn, '[con_id={}]'.format(qt.id))
         return
 
-    proc = subprocess.Popen(shlex.split(conf['menu']), stdin=subprocess.PIPE,
+    proc = subprocess.Popen(expand_command(conf['menu']),
+                            stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE)
     for r in sorted(conf['shells'].keys()):
         proc.stdin.write((r + '\n').encode())
@@ -112,6 +118,10 @@ def toggle_quickterm_select(conf):
     toggle_quickterm(conf, shell)
 
 
+def term_title(shell):
+    return '{} - i3-quickterm'.format(shell)
+
+
 def toggle_quickterm(conf, shell):
     conn = i3ipc.Connection()
     tree = conn.get_tree()
@@ -120,7 +130,8 @@ def toggle_quickterm(conf, shell):
 
     # does it exist already?
     if len(qt) == 0:
-        subprocess.call(shlex.split(conf['term']) + ['-e', sys.argv[0], '-i', shell])
+        subprocess.call(expand_command(conf['term'], title=term_title(shell)) +
+                        ['-e', sys.argv[0], '-i', shell])
     else:
         qt = qt[0]
         ws, ws_tree = get_current_workspace(conn)
@@ -136,7 +147,7 @@ def launch_inplace(conf, shell):
     conn.command('mark {}'.format(shell_mark))
     move_back(conn, '[con_mark={}]'.format(shell_mark))
     pop_it(conn, shell_mark)
-    prog_cmd = shlex.split(conf['shells'][shell])
+    prog_cmd = expand_command(conf['shells'][shell])
     subprocess.call(prog_cmd)
 
 
