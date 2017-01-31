@@ -38,13 +38,15 @@ The configuration is read from `~/.config/i3/i3-quickterm.json`.
 
 * `menu`: the dmenu-compatible application used to select the shell
 * `term`: the terminal emulator of choice
+* `history`: a file to save the last-used shells order, last-used ordering
+  is disabled if set to null
 * `ratio`: the percentage of the screen height to use
 * `pos`: where to pop the terminal (`top` or `bottom`)
 * `shells`: registered shells (`{ name: command }`)
 
-`menu`, `term` and `shell` can contain placeholders for environment variables:
-`{$var}`. `term` can also contain the `{title}` placeholder to set the window
-title of the terminal.
+`menu`, `term`, `history` and `shell` can contain placeholders for environment
+variables: `{$var}`. `term` can also contain the `{title}` placeholder to set
+the window title of the terminal.
 
 Unspecified keys are inherited from the defaults:
 
@@ -52,6 +54,7 @@ Unspecified keys are inherited from the defaults:
 {
     'menu': 'rofi -dmenu -p "quickterm: " -no-custom -auto-select',
     'term': 'urxvt -title "{title}"',
+    'history': '{$HOME}/.local/share/i3/i3-quickterm.order',
     'ratio': 0.25,
     'pos': 'top',
     'shells': {
