@@ -2,6 +2,7 @@
 
 import argparse
 import copy
+import fcntl
 import json
 import os
 import shlex
@@ -60,11 +61,13 @@ def get_history_file(conf):
     os.makedirs(str(p.parent), exist_ok=True)
 
     f = open(str(p), 'a+')
+    fcntl.lockf(f, fcntl.LOCK_EX)
 
     try:
         f.seek(0)
         yield f
     finally:
+        fcntl.lockf(f, fcntl.LOCK_UN)
         f.close()
 
 
