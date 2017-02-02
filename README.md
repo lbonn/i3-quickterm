@@ -69,7 +69,7 @@ Unspecified keys are inherited from the defaults:
 Requirements
 ------------
 
-* python 3
+* python >= 3.4
 * i3 >= v3.11
 * [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/)
 * dmenu or rofi (optional)

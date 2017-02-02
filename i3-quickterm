@@ -71,9 +71,11 @@ def get_history_file(conf):
         f.close()
 
 
-def expand_command(cmd, **kwargs):
-    environ_prefixed = {'$' + k: v for k, v in os.environ.items()}
-    return shlex.split(cmd.format(**kwargs, **environ_prefixed))
+def expand_command(cmd, **rplc_map):
+    d = {'$' + k: v for k, v in os.environ.items()}
+    d.update(rplc_map)
+
+    return shlex.split(cmd.format(**d))
 
 
 def move_back(conn, selector):
