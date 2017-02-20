@@ -54,7 +54,7 @@ Unspecified keys are inherited from the defaults:
 {
     'menu': 'rofi -dmenu -p "quickterm: " -no-custom -auto-select',
     'term': 'urxvt -title "{title}"',
-    'history': '{$HOME}/.local/share/i3/i3-quickterm.order',
+    'history': '{$HOME}/.cache/i3/i3-quickterm.order',
     'ratio': 0.25,
     'pos': 'top',
     'shells': {
