@@ -47,6 +47,7 @@ def read_conf(fn):
             c = json.load(f)
         return c
     except Exception as e:
+        print('invalid config file: {}'.format(e), file=sys.stderr)
         return {}
 
 
