@@ -188,7 +188,7 @@ def toggle_quickterm(conf, shell):
 
         move_back(conn, '[con_id={}]'.format(qt.id))
         if qt.workspace().name != ws.name:
-            pop_it(conn, shell_mark)
+            pop_it(conn, shell_mark, conf['pos'], conf['ratio'])
 
 
 def launch_inplace(conf, shell):
@@ -196,7 +196,7 @@ def launch_inplace(conf, shell):
     shell_mark = MARK_QT.format(shell)
     conn.command('mark {}'.format(shell_mark))
     move_back(conn, '[con_mark={}]'.format(shell_mark))
-    pop_it(conn, shell_mark)
+    pop_it(conn, shell_mark, conf['pos'], conf['ratio'])
     prog_cmd = expand_command(conf['shells'][shell])
     os.execvp(prog_cmd[0], prog_cmd)
 
