@@ -179,8 +179,13 @@ def toggle_quickterm(conf, shell):
 
     # does it exist already?
     if len(qt) == 0:
-        cmd = (expand_command(conf['term'], title=term_title(shell)) +
-               ['-e', sys.argv[0], '-i', shell])
+
+        if 'urxvt' in conf['term']:
+            args = ['-e', sys.argv[0], '-i', shell]
+        else:
+            args = ['-e', sys.argv[0] + ' -i ' + shell]
+
+        cmd = (expand_command(conf['term'], title=term_title(shell)) + args)
         os.execvp(cmd[0], cmd)
     else:
         qt = qt[0]
