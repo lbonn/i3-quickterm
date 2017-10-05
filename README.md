@@ -44,16 +44,26 @@ The configuration is read from `~/.config/i3/i3-quickterm.json`.
 * `pos`: where to pop the terminal (`top` or `bottom`)
 * `shells`: registered shells (`{ name: command }`)
 
+`term` can be either:
+- a format string, like this one: `urxvt -t {title} -e {expanded}` with
+  the correct arguments format of your terminal. Some terminals, like
+  xfce4-terminal need the command argument to be passed as a string. In
+  this case, replace `{expanded}` by `{string}`
+- a terminal name from the hardcoded list, which should work out of the box.
+  Right now, the only reference for the list is the source code
+  (search for `TERMS =`).
+  If you'd like to add another terminal (or correct an error), please open
+  a pull request.
+
 `menu`, `term`, `history` and `shell` can contain placeholders for environment
-variables: `{$var}`. `term` can also contain the `{title}` placeholder to set
-the window title of the terminal.
+variables: `{$var}`.
 
 Unspecified keys are inherited from the defaults:
 
 ```
 {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
-    "term": "urxvt -title '{title}'",
+    "term": "urxvt",
     "history": "{$HOME}/.cache/i3/i3-quickterm.order",
     "ratio": 0.25,
     "pos": "top",

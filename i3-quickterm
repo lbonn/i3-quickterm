@@ -15,13 +15,9 @@ from pathlib import Path
 import i3ipc
 
 
-MARK_QT_PATTERN = 'quickterm_.*'
-MARK_QT = 'quickterm_{}'
-
-
 DEFAULT_CONF = {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
-    "term": "urxvt -title '{title}'",
+    "term": "urxvt",
     "history": "{$HOME}/.cache/i3/i3-quickterm.order",
     "ratio": 0.25,
     "pos": "top",
@@ -31,6 +27,37 @@ DEFAULT_CONF = {
         "python": "ipython3 --no-banner",
         "shell": "{$SHELL}"
     }
+}
+
+
+MARK_QT_PATTERN = 'quickterm_.*'
+MARK_QT = 'quickterm_{}'
+
+
+def TERM(executable, execopt='-e', execfmt='expanded', titleopt='-T'):
+    """Helper to declare a terminal in the hardcoded list"""
+    if execfmt not in ('expanded', 'string'):
+        raise RuntimeError('Invalid execfmt')
+
+    fmt = executable
+
+    if titleopt is not None:
+        fmt += ' ' + titleopt + ' \'{title}\''
+
+    fmt += ' {} {{{}}}'.format(execopt, execfmt)
+
+    return fmt
+
+
+TERMS = {
+    'alacritty': TERM('alacritty', titleopt='-t'),
+    'gnome-terminal': TERM('gnome-terminal', execopt='--', titleopt=None),
+    'roxterm': TERM('roxterm'),
+    'st': TERM('st'),
+    'termite': TERM('termite', execfmt='string', titleopt='-t'),
+    'urxvt': TERM('urxvt'),
+    'xfce4-terminal': TERM('xfce4-terminal', execfmt='string'),
+    'xterm': TERM('xterm'),
 }
 
 
@@ -167,6 +194,10 @@ def toggle_quickterm_select(conf, hist=None):
     toggle_quickterm(conf, shell)
 
 
+def quoted(s):
+    return "'" + s + "'"
+
+
 def term_title(shell):
     return '{} - i3-quickterm'.format(shell)
 
@@ -179,9 +210,13 @@ def toggle_quickterm(conf, shell):
 
     # does it exist already?
     if len(qt) == 0:
-        cmd = (expand_command(conf['term'], title=term_title(shell)) +
-               ['-e', sys.argv[0], '-i', shell])
-        os.execvp(cmd[0], cmd)
+        term = TERMS.get(conf['term'], conf['term'])
+        qt_cmd = "{} -i {}".format(sys.argv[0], shell)
+
+        term_cmd = expand_command(term, title=quoted(term_title(shell)),
+                                  expanded=qt_cmd,
+                                  string=quoted(qt_cmd))
+        os.execvp(term_cmd[0], term_cmd)
     else:
         qt = qt[0]
         ws, ws_tree = get_current_workspace(conn)
