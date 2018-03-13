@@ -42,7 +42,7 @@ def TERM(executable, execopt='-e', execfmt='expanded', titleopt='-T'):
     fmt = executable
 
     if titleopt is not None:
-        fmt += ' ' + titleopt + ' \'{title}\''
+        fmt += ' ' + titleopt + ' {title}'
 
     fmt += ' {} {{{}}}'.format(execopt, execfmt)
 
