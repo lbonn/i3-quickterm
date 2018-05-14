@@ -259,4 +259,3 @@ if __name__ == '__main__':
         launch_inplace(conf, args.shell)
     else:
         toggle_quickterm(conf, args.shell)
-
