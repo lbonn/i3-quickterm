@@ -56,6 +56,7 @@ TERMS = {
     'st': TERM('st'),
     'termite': TERM('termite', execfmt='string', titleopt='-t'),
     'urxvt': TERM('urxvt'),
+    'urxvtc': TERM('urxvtc'),
     'xfce4-terminal': TERM('xfce4-terminal', execfmt='string'),
     'xterm': TERM('xterm'),
 }
@@ -258,3 +259,4 @@ if __name__ == '__main__':
         launch_inplace(conf, args.shell)
     else:
         toggle_quickterm(conf, args.shell)
+
