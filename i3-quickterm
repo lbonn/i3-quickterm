@@ -51,6 +51,7 @@ def TERM(executable, execopt='-e', execfmt='expanded', titleopt='-T'):
 
 TERMS = {
     'alacritty': TERM('alacritty', titleopt='-t'),
+    'kitty': TERM('kitty', titleopt='-T'),
     'gnome-terminal': TERM('gnome-terminal', execopt='--', titleopt=None),
     'roxterm': TERM('roxterm'),
     'st': TERM('st'),
