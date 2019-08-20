@@ -1,7 +1,7 @@
 i3-quickterm
 =============
 
-A small drop-down terminal for [i3wm](https://i3wm.org/)
+A small drop-down terminal for [i3wm](https://i3wm.org/) and [sway](https://swaywm.org/)
 
 Features
 --------
@@ -80,6 +80,6 @@ Requirements
 ------------
 
 * python >= 3.4
-* i3 >= v3.11
+* i3 >= v3.11 or sway (git master branch)
 * [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/)
 * dmenu or rofi (optional)
