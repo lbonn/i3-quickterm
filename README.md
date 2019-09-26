@@ -81,5 +81,5 @@ Requirements
 
 * python >= 3.4
 * i3 >= v3.11 or sway (git master branch)
-* [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/)
+* [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/) >= v2.0.1
 * dmenu or rofi (optional)
