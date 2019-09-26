@@ -114,9 +114,9 @@ def move_back(conn, selector):
 
 
 def pop_it(conn, mark_name, pos='top', ratio=0.25):
-    ws, _ = get_current_workspace(conn)
-    wx, wy = ws['rect']['x'], ws['rect']['y']
-    wwidth, wheight = ws['rect']['width'], ws['rect']['height']
+    ws = get_current_workspace(conn)
+    wx, wy = ws.rect.x, ws.rect.y
+    wwidth, wheight = ws.rect.width, ws.rect.height
 
     width = wwidth
     height = int(wheight*ratio)
@@ -138,24 +138,17 @@ def pop_it(conn, mark_name, pos='top', ratio=0.25):
 
 
 def get_current_workspace(conn):
-    ws = [w for w in conn.get_workspaces() if w['focused']][0]
-    tree = conn.get_tree()
-
-    # wname = workspace['name']
-    ws_tree = [c for c in tree.descendents()
-               if c.type == 'workspace' and c.name == ws['name']][0]
-
-    return ws, ws_tree
+    return conn.get_tree().find_focused().workspace()
 
 
 def toggle_quickterm_select(conf, hist=None):
     """Hide a quickterm visible on current workspace or prompt
     the user for a shell type"""
     conn = i3ipc.Connection()
-    ws, ws_tree = get_current_workspace(conn)
+    ws = get_current_workspace(conn)
 
     # is there a quickterm opened in the current workspace?
-    qt = ws_tree.find_marked(MARK_QT_PATTERN)
+    qt = ws.find_marked(MARK_QT_PATTERN)
     if qt:
         qt = qt[0]
         move_back(conn, '[con_id={}]'.format(qt.id))
@@ -206,9 +199,8 @@ def term_title(shell):
 
 def toggle_quickterm(conf, shell):
     conn = i3ipc.Connection()
-    tree = conn.get_tree()
     shell_mark = MARK_QT.format(shell)
-    qt = tree.find_marked(shell_mark)
+    qt = conn.get_tree().find_marked(shell_mark)
 
     # does it exist already?
     if len(qt) == 0:
@@ -221,7 +213,7 @@ def toggle_quickterm(conf, shell):
         os.execvp(term_cmd[0], term_cmd)
     else:
         qt = qt[0]
-        ws, ws_tree = get_current_workspace(conn)
+        ws = get_current_workspace(conn)
 
         move_back(conn, '[con_id={}]'.format(qt.id))
         if qt.workspace().name != ws.name:
