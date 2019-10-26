@@ -22,13 +22,19 @@ one supplied in argument.
 If the requested shell is already opened on another screen, it will be moved on
 the current screen.
 
+First a daemon process needs to be started:
+
+```
+exec_always --no-startup-id i3-quickterm --daemon
+```
+
 It is recommended to map it to an i3 binding:
 
 ```
-# with prompt
-bindsym $mod+p exec i3_quickterm
-# always pop standard shell, without the menu
-bindsym $mod+b exec i3_quickterm shell
+# with prompt:
+bindsym $mod+p exec --no-startup-id i3-quickterm
+# ...or always pop standard shell, without the selection menu:
+bindsym $mod+b exec --no-startup-id i3-quickterm shell
 ```
 
 Configuration
@@ -40,7 +46,7 @@ The configuration is read from `~/.config/i3/i3-quickterm.json`.
 * `term`: the terminal emulator of choice
 * `history`: a file to save the last-used shells order, last-used ordering
   is disabled if set to null
-* `ratio`: the percentage of the screen height to use
+* `ratio`: the initial percentage of the screen height to use
 * `pos`: where to pop the terminal (`top` or `bottom`)
 * `shells`: registered shells (`{ name: command }`)
 

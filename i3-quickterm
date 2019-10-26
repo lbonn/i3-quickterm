@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 
 import argparse
-import copy
 import fcntl
 import json
 import os
 import shlex
 import subprocess
 import sys
+import socket
+import selectors
 
 from contextlib import contextmanager, suppress
 from pathlib import Path
+from threading import Thread
+from math import isclose
 
 import i3ipc
 
 
-DEFAULT_CONF = {
+SOCKET_FILE = '/tmp/.i3-quickterm.sock'
+CONF = {  # define default values here; can be overridden by user conf
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
     "term": "urxvt",
     "history": "{$HOME}/.cache/i3/i3-quickterm.order",
@@ -28,7 +32,6 @@ DEFAULT_CONF = {
         "shell": "{$SHELL}"
     }
 }
-
 
 MARK_QT_PATTERN = 'quickterm_.*'
 MARK_QT = 'quickterm_{}'
@@ -45,49 +48,35 @@ def TERM(executable, execopt='-e', execfmt='expanded', titleopt='-T'):
         fmt += ' ' + titleopt + ' {title}'
 
     fmt += ' {} {{{}}}'.format(execopt, execfmt)
-
     return fmt
-
-
-TERMS = {
-    'alacritty': TERM('alacritty', titleopt='-t'),
-    'kitty': TERM('kitty', titleopt='-T'),
-    'gnome-terminal': TERM('gnome-terminal', execopt='--', titleopt=None),
-    'roxterm': TERM('roxterm'),
-    'st': TERM('st'),
-    'termite': TERM('termite', execfmt='string', titleopt='-t'),
-    'urxvt': TERM('urxvt'),
-    'urxvtc': TERM('urxvtc'),
-    'xfce4-terminal': TERM('xfce4-terminal', execfmt='string'),
-    'xterm': TERM('xterm'),
-}
 
 
 def conf_path():
     home_dir = os.environ['HOME']
     xdg_dir = os.environ.get('XDG_CONFIG_DIR', '{}/.config'.format(home_dir))
-
     return xdg_dir + '/i3/i3-quickterm.json'
 
 
-def read_conf(fn):
+def read_conf():
     try:
-        with open(fn, 'r') as f:
-            c = json.load(f)
-        return c
+        with open(conf_path(), 'r') as f:
+            return json.load(f)
     except Exception as e:
         print('invalid config file: {}'.format(e), file=sys.stderr)
         return {}
 
 
+def load_conf():
+    CONF.update(read_conf())
+
+
 @contextmanager
-def get_history_file(conf):
-    if conf['history'] is None:
+def get_history_file():
+    if CONF['history'] is None:
         yield None
         return
 
-    p = Path(expand_command(conf['history'])[0])
-
+    p = Path(expand_command(CONF['history'])[0])
     os.makedirs(str(p.parent), exist_ok=True)
 
     f = open(str(p), 'a+')
@@ -104,7 +93,6 @@ def get_history_file(conf):
 def expand_command(cmd, **rplc_map):
     d = {'$' + k: v for k, v in os.environ.items()}
     d.update(rplc_map)
-
     return shlex.split(cmd.format(**d))
 
 
@@ -113,13 +101,13 @@ def move_back(conn, selector):
                  .format(selector))
 
 
-def pop_it(conn, mark_name, pos='top', ratio=0.25):
+# make terminal visible
+def bring_up(conn, mark_name, pos='top', ratio=0.25):
     ws = get_current_workspace(conn)
     wx, wy = ws.rect.x, ws.rect.y
-    wwidth, wheight = ws.rect.width, ws.rect.height
+    width, wheight = ws.rect.width, ws.rect.height
 
-    width = wwidth
-    height = int(wheight*ratio)
+    height = int(wheight * ratio)
     posx = wx
 
     if pos == 'bottom':
@@ -129,10 +117,10 @@ def pop_it(conn, mark_name, pos='top', ratio=0.25):
         posy = wy
 
     conn.command('[con_mark={mark}],'
-                 'resize set {width} px {height} px,'
-                 'move absolute position {posx}px {posy}px,'
                  'move scratchpad,'
-                 'scratchpad show'
+                 'scratchpad show,'
+                 'resize set {width} px {height} px,'
+                 'move absolute position {posx}px {posy}px'
                  ''.format(mark=mark_name, posx=posx, posy=posy,
                            width=width, height=height))
 
@@ -141,7 +129,7 @@ def get_current_workspace(conn):
     return conn.get_tree().find_focused().workspace()
 
 
-def toggle_quickterm_select(conf, hist=None):
+def toggle_quickterm_select():
     """Hide a quickterm visible on current workspace or prompt
     the user for a shell type"""
     conn = i3ipc.Connection()
@@ -154,7 +142,7 @@ def toggle_quickterm_select(conf, hist=None):
         move_back(conn, '[con_id={}]'.format(qt.id))
         return
 
-    with get_history_file(conf) as hist:
+    with get_history_file() as hist:
         # compute the list from conf + (maybe) history
         hist_list = None
         if hist is not None:
@@ -162,12 +150,12 @@ def toggle_quickterm_select(conf, hist=None):
                 hist_list = json.load(hist)
 
                 # invalidate if different set from the configured shells
-                if set(hist_list) != set(conf['shells'].keys()):
+                if set(hist_list) != set(CONF['shells'].keys()):
                     hist_list = None
 
-        shells = hist_list or sorted(conf['shells'].keys())
+        shells = hist_list or sorted(CONF['shells'].keys())
 
-        proc = subprocess.Popen(expand_command(conf['menu']),
+        proc = subprocess.Popen(expand_command(CONF['menu']),
                                 stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
 
@@ -177,7 +165,7 @@ def toggle_quickterm_select(conf, hist=None):
 
         shell = stdout.decode().strip()
 
-        if shell not in conf['shells']:
+        if shell not in CONF['shells']:
             return
 
         if hist is not None:
@@ -185,8 +173,7 @@ def toggle_quickterm_select(conf, hist=None):
             shells = [shell] + [s for s in shells if s != shell]
             hist.truncate(0)
             json.dump(shells, hist)
-
-    toggle_quickterm(conf, shell)
+    send_msg(shell)
 
 
 def quoted(s):
@@ -197,58 +184,148 @@ def term_title(shell):
     return '{} - i3-quickterm'.format(shell)
 
 
-def toggle_quickterm(conf, shell):
-    conn = i3ipc.Connection()
+def toggle_quickterm(shell, conn):
     shell_mark = MARK_QT.format(shell)
     qt = conn.get_tree().find_marked(shell_mark)
 
     # does it exist already?
     if len(qt) == 0:
-        term = TERMS.get(conf['term'], conf['term'])
-        qt_cmd = "{} -i {}".format(sys.argv[0], shell)
+        term = TERMS.get(CONF['term'], CONF['term'])
+        qt_cmd = "{} -i -r {} {}".format(sys.argv[0],
+                                         SHELL_RATIOS[shell],
+                                         shell)
 
         term_cmd = expand_command(term, title=quoted(term_title(shell)),
                                   expanded=qt_cmd,
                                   string=quoted(qt_cmd))
-        os.execvp(term_cmd[0], term_cmd)
+        subprocess.Popen(term_cmd)
     else:
         qt = qt[0]
-        ws = get_current_workspace(conn)
 
-        move_back(conn, '[con_id={}]'.format(qt.id))
-        if qt.workspace().name != ws.name:
-            pop_it(conn, shell_mark, conf['pos'], conf['ratio'])
+        if qt.workspace().name == get_current_workspace(conn).name:
+            current_ratio = qt.rect.height / qt.workspace().rect.height
+            if not isclose(current_ratio, SHELL_RATIOS[shell], abs_tol=0.03):
+                SHELL_RATIOS[shell] = current_ratio
+            move_back(conn, '[con_id={}]'.format(qt.id))
+        else:
+            bring_up(conn, shell_mark, CONF['pos'], SHELL_RATIOS[shell])
 
 
-def launch_inplace(conf, shell):
+def launch_inplace(shell, ratio):
     conn = i3ipc.Connection()
     shell_mark = MARK_QT.format(shell)
     conn.command('mark {}'.format(shell_mark))
     move_back(conn, '[con_mark={}]'.format(shell_mark))
-    pop_it(conn, shell_mark, conf['pos'], conf['ratio'])
-    prog_cmd = expand_command(conf['shells'][shell])
+    bring_up(conn, shell_mark, CONF['pos'], ratio)
+    prog_cmd = expand_command(CONF['shells'][shell])
     os.execvp(prog_cmd[0], prog_cmd)
 
 
+def on_shutdown(i3_conn, e):
+    os._exit(0)
+
+
+class Listener:
+    def __init__(self):
+        self.i3 = i3ipc.Connection()
+        self.i3.on('shutdown', on_shutdown)
+        self.listening_socket = socket.socket(socket.AF_UNIX,
+                                              socket.SOCK_STREAM)
+        if os.path.exists(SOCKET_FILE):
+            os.remove(SOCKET_FILE)
+        self.listening_socket.bind(SOCKET_FILE)
+        self.listening_socket.listen(1)
+
+    def launch_i3(self):
+        self.i3.main()
+
+    def launch_server(self):
+        selector = selectors.DefaultSelector()
+
+        def accept(sock):
+            conn, addr = sock.accept()
+            selector.register(conn, selectors.EVENT_READ, read)
+
+        def read(conn):
+            data = conn.recv(16)
+            if not data:
+                selector.unregister(conn)
+                conn.close()
+            elif len(data) > 0:
+                shell = data.decode().strip()
+                toggle_quickterm(shell, self.i3)
+
+        selector.register(self.listening_socket, selectors.EVENT_READ, accept)
+
+        while True:
+            for key, event in selector.select():
+                callback = key.data
+                callback(key.fileobj)
+
+    def run(self):
+        t_i3 = Thread(target=self.launch_i3)
+        t_server = Thread(target=self.launch_server)
+        for t in (t_i3, t_server):
+            t.start()
+
+
+def send_msg(shell):
+    client_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client_socket.connect(SOCKET_FILE)
+    client_socket.send(shell.encode())
+    client_socket.close()
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--in-place', dest='in_place',
+    parser = argparse.ArgumentParser(prog='i3-quickterm',
+                                     description="""
+        Launch and toggle the visibility of shells.
+
+        --daemon option launches the daemon process; it's required to
+        keep stateful information, such as per-shell height ratio.
+        """)
+    parser.add_argument('-d', '--daemon',
+                        dest='daemon',
+                        help='start the daemon',
                         action='store_true')
+    parser.add_argument('-i', '--in-place',
+                        dest='in_place',
+                        action='store_true')
+    parser.add_argument('-r', '--ratio',
+                        dest='ratio',
+                        type=float,
+                        help='height ratio of a shell to be instantiated')
     parser.add_argument('shell', metavar='SHELL', nargs='?')
     args = parser.parse_args()
 
-    conf = copy.deepcopy(DEFAULT_CONF)
-    conf.update(read_conf(conf_path()))
+    if args.daemon:
+        load_conf()
+        SHELL_RATIOS = {k: CONF['ratio'] for k in set(CONF['shells'].keys())}
+        TERMS = {
+            'alacritty': TERM('alacritty', titleopt='-t'),
+            'kitty': TERM('kitty', titleopt='-T'),
+            'gnome-terminal': TERM('gnome-terminal',
+                                   execopt='--', titleopt=None),
+            'roxterm': TERM('roxterm'),
+            'st': TERM('st'),
+            'termite': TERM('termite', execfmt='string', titleopt='-t'),
+            'urxvt': TERM('urxvt'),
+            'urxvtc': TERM('urxvtc'),
+            'xfce4-terminal': TERM('xfce4-terminal', execfmt='string'),
+            'xterm': TERM('xterm'),
+        }
 
-    if args.shell is None:
-        toggle_quickterm_select(conf)
+        listener = Listener()
+        listener.run()
+    elif args.shell is None:
+        load_conf()
+        toggle_quickterm_select()
         sys.exit(0)
-
-    if args.shell not in conf['shells']:
+    elif args.shell not in CONF['shells']:
         print('unknown shell: {}'.format(args.shell), file=sys.stderr)
         sys.exit(1)
-
-    if args.in_place:
-        launch_inplace(conf, args.shell)
-    else:
-        toggle_quickterm(conf, args.shell)
+    elif args.in_place:
+        load_conf()
+        launch_inplace(args.shell, args.ratio)
+    else:  # toggle action
+        send_msg(args.shell)
