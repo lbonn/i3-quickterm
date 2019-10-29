@@ -116,9 +116,8 @@ def move_back(conn, selector):
 def pop_it(conn, mark_name, pos='top', ratio=0.25):
     ws = get_current_workspace(conn)
     wx, wy = ws.rect.x, ws.rect.y
-    wwidth, wheight = ws.rect.width, ws.rect.height
+    width, wheight = ws.rect.width, ws.rect.height
 
-    width = wwidth
     height = int(wheight*ratio)
     posx = wx
 
@@ -129,10 +128,10 @@ def pop_it(conn, mark_name, pos='top', ratio=0.25):
         posy = wy
 
     conn.command('[con_mark={mark}],'
-                 'resize set {width} px {height} px,'
-                 'move absolute position {posx}px {posy}px,'
                  'move scratchpad,'
-                 'scratchpad show'
+                 'scratchpad show,'
+                 'resize set {width} px {height} px,'
+                 'move absolute position {posx}px {posy}px'
                  ''.format(mark=mark_name, posx=posx, posy=posy,
                            width=width, height=height))
 
