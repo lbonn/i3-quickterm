@@ -4,4 +4,5 @@ python:
 install:
   - pip install -r requirements-dev.txt
 script:
+  - black --check --diff ./i3-quickterm
   - flake8 ./i3-quickterm
