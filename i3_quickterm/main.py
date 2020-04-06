@@ -15,6 +15,9 @@ from pathlib import Path
 import i3ipc
 
 
+__version__ = "1.0"
+
+
 # fmt: off
 DEFAULT_CONF = {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
@@ -238,6 +241,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--in-place", dest="in_place", action="store_true")
     parser.add_argument("shell", metavar="SHELL", nargs="?")
+    parser.add_argument(
+        "--version", action="version", version="%(prog)s {}".format(__version__)
+    )
     args = parser.parse_args()
 
     conf = copy.deepcopy(DEFAULT_CONF)
