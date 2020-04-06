@@ -1,6 +1,8 @@
 i3-quickterm
 =============
 
+[![PyPI version](https://badge.fury.io/py/i3-quickterm.svg)](https://badge.fury.io/py/i3-quickterm)
+
 A small drop-down terminal for [i3wm](https://i3wm.org/) and [sway](https://swaywm.org/)
 
 Features
