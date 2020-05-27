@@ -39,7 +39,6 @@ Building From Source
 git clone https://github.com/lbonn/i3-quickterm.git
 cd i3-quickterm
 sudo python3 setup.py install
-
 ```
 
 Configuration
