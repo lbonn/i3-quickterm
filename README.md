@@ -32,6 +32,15 @@ bindsym $mod+p exec i3_quickterm
 # always pop standard shell, without the menu
 bindsym $mod+b exec i3_quickterm shell
 ```
+Building From Source
+-----
+
+```
+git clone https://github.com/lbonn/i3-quickterm.git
+cd i3-quickterm
+sudo python3 setup.py install
+
+```
 
 Configuration
 -------------
