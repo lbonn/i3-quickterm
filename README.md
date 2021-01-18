@@ -1,7 +1,7 @@
 i3-quickterm
 =============
 
-[![PyPI version](https://badge.fury.io/py/i3-quickterm.svg)](https://badge.fury.io/py/i3-quickterm)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/python:i3-quickterm.svg)](https://repology.org/project/python:i3-quickterm/versions)
 
 A small drop-down terminal for [i3wm](https://i3wm.org/) and [sway](https://swaywm.org/)
 
