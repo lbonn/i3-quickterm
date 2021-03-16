@@ -28,9 +28,9 @@ It is recommended to map it to an i3 binding:
 
 ```
 # with prompt
-bindsym $mod+p exec i3_quickterm
+bindsym $mod+p exec i3-quickterm
 # always pop standard shell, without the menu
-bindsym $mod+b exec i3_quickterm shell
+bindsym $mod+b exec i3-quickterm shell
 ```
 
 Configuration
