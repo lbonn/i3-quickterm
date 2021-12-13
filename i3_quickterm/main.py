@@ -63,6 +63,7 @@ TERMS = {
     "termite": TERM("termite", execfmt="string", titleopt="-t"),
     "urxvt": TERM("urxvt"),
     "urxvtc": TERM("urxvtc"),
+    "foot": TERM("foot", titleopt="-T", execopt="", execfmt="expanded"),
     "xfce4-terminal": TERM("xfce4-terminal", execfmt="string"),
     "xterm": TERM("xterm"),
 }
