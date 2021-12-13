@@ -210,7 +210,9 @@ def toggle_quickterm(conf, shell):
     # does it exist already?
     if len(qt) == 0:
         term = TERMS.get(conf["term"], conf["term"])
-        qt_cmd = "{} -i {}".format(sys.argv[0], shell)
+        qt_cmd = f"{sys.argv[0]} -i {shell}"
+        if "_config" in conf:
+            qt_cmd += f" -c {conf['_config']}"
 
         term_cmd = expand_command(
             term,
@@ -241,6 +243,13 @@ def launch_inplace(conf, shell):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--in-place", dest="in_place", action="store_true")
+    parser.add_argument(
+        "-c",
+        "--config",
+        dest="config",
+        type=str,
+        help="read config from specified file",
+    )
     parser.add_argument("shell", metavar="SHELL", nargs="?")
     parser.add_argument(
         "--version", action="version", version="%(prog)s {}".format(__version__)
@@ -248,7 +257,11 @@ def main():
     args = parser.parse_args()
 
     conf = copy.deepcopy(DEFAULT_CONF)
-    conf.update(read_conf(conf_path()))
+    if args.config:
+        conf.update(read_conf(args.config))
+        conf["_config"] = args.config
+    else:
+        conf.update(read_conf(conf_path()))
 
     if args.shell is None:
         toggle_quickterm_select(conf)
