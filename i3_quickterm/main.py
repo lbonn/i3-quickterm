@@ -209,7 +209,9 @@ def toggle_quickterm(conf, shell):
     # does it exist already?
     if len(qt) == 0:
         term = TERMS.get(conf["term"], conf["term"])
-        qt_cmd = "{} -i {}".format(sys.argv[0], shell)
+        qt_cmd = f"{sys.argv[0]} -i {shell}"
+        if "_config" in conf:
+            qt_cmd += f" -c {conf['_config']}"
 
         term_cmd = expand_command(
             term,
@@ -250,6 +252,7 @@ def main():
     conf = copy.deepcopy(DEFAULT_CONF)
     if args.config:
         conf.update(read_conf(args.config))
+        conf["_config"] = args.config
     else:
         conf.update(read_conf(conf_path()))
 
