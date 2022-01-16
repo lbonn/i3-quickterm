@@ -77,10 +77,10 @@ def conf_path():
     home_dir = os.environ["HOME"]
     xdg_dir = os.environ.get("XDG_CONFIG_DIR", "{}/.config".format(home_dir))
 
-    for l in locations:
-        fl = "{}/{}".format(xdg_dir, l)
-        if os.path.exists(fl):
-            return fl
+    for loc in locations:
+        full_loc = "{}/{}".format(xdg_dir, loc)
+        if os.path.exists(full_loc):
+            return full_loc
 
     return None
 
