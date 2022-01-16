@@ -49,7 +49,7 @@ def TERM(executable, execopt="-e", execfmt="expanded", titleopt="-T"):
     if titleopt is not None:
         fmt += " " + titleopt + " {title}"
 
-    fmt += " {} {{{}}}".format(execopt, execfmt)
+    fmt += f" {execopt} {{{execfmt}}}"
 
     return fmt
 
@@ -75,10 +75,10 @@ def conf_path():
         "i3/i3-quickterm.json",  # legacy location
     ]
     home_dir = os.environ["HOME"]
-    xdg_dir = os.environ.get("XDG_CONFIG_DIR", "{}/.config".format(home_dir))
+    xdg_dir = os.environ.get("XDG_CONFIG_DIR", f"{home_dir}/.config")
 
     for loc in locations:
-        full_loc = "{}/{}".format(xdg_dir, loc)
+        full_loc = f"{xdg_dir}/{loc}"
         if os.path.exists(full_loc):
             return full_loc
 
@@ -95,7 +95,7 @@ def read_conf(fn):
             c = json.load(f)
         return c
     except Exception as e:
-        print("invalid config file: {}".format(e), file=sys.stderr)
+        print(f"invalid config file: {e}", file=sys.stderr)
         return {}
 
 
@@ -128,7 +128,7 @@ def expand_command(cmd, **rplc_map):
 
 
 def move_back(conn, selector):
-    conn.command("{} floating enable, move scratchpad".format(selector))
+    conn.command(f"{selector} floating enable, move scratchpad")
 
 
 def pop_it(conn, mark_name, pos="top", ratio=0.25):
@@ -146,12 +146,11 @@ def pop_it(conn, mark_name, pos="top", ratio=0.25):
         posy = wy
 
     conn.command(
-        "[con_mark={mark}],"
-        "move scratchpad,"
-        "scratchpad show,"
-        "resize set {width} px {height} px,"
-        "move absolute position {posx}px {posy}px"
-        "".format(mark=mark_name, posx=posx, posy=posy, width=width, height=height)
+        f"[con_mark={mark_name}],"
+        f"move scratchpad,"
+        f"scratchpad show,"
+        f"resize set {width} px {height} px,"
+        f"move absolute position {posx}px {posy}px"
     )
 
 
@@ -169,7 +168,7 @@ def toggle_quickterm_select(conf, hist=None):
     qt = ws.find_marked(MARK_QT_PATTERN)
     if qt:
         qt = qt[0]
-        move_back(conn, "[con_id={}]".format(qt.id))
+        move_back(conn, f"[con_id={qt.id}]")
         return
 
     with get_history_file(conf) as hist:
@@ -212,7 +211,7 @@ def quoted(s):
 
 
 def term_title(shell):
-    return "{} - i3-quickterm".format(shell)
+    return f"{shell} - i3-quickterm"
 
 
 def toggle_quickterm(conf, shell):
@@ -238,7 +237,7 @@ def toggle_quickterm(conf, shell):
         qt = qt[0]
         ws = get_current_workspace(conn)
 
-        move_back(conn, "[con_id={}]".format(qt.id))
+        move_back(conn, f"[con_id={qt.id}]")
         if qt.workspace().name != ws.name:
             pop_it(conn, shell_mark, conf["pos"], conf["ratio"])
 
@@ -246,8 +245,8 @@ def toggle_quickterm(conf, shell):
 def launch_inplace(conf, shell):
     conn = i3ipc.Connection()
     shell_mark = MARK_QT.format(shell)
-    conn.command("mark {}".format(shell_mark))
-    move_back(conn, "[con_mark={}]".format(shell_mark))
+    conn.command(f"mark {shell_mark}")
+    move_back(conn, "f[con_mark={shell_mark}]")
     pop_it(conn, shell_mark, conf["pos"], conf["ratio"])
     prog_cmd = expand_command(conf["shells"][shell])
     os.execvp(prog_cmd[0], prog_cmd)
@@ -265,7 +264,7 @@ def main():
     )
     parser.add_argument("shell", metavar="SHELL", nargs="?")
     parser.add_argument(
-        "--version", action="version", version="%(prog)s {}".format(__version__)
+        "--version", action="version", version=f"%(prog)s {__version__}"
     )
     args = parser.parse_args()
 
@@ -281,7 +280,7 @@ def main():
         sys.exit(0)
 
     if args.shell not in conf["shells"]:
-        print("unknown shell: {}".format(args.shell), file=sys.stderr)
+        print(f"unknown shell: {args.shell}", file=sys.stderr)
         sys.exit(1)
 
     if args.in_place:

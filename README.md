@@ -81,7 +81,7 @@ Unspecified keys are inherited from the defaults:
 Requirements
 ------------
 
-* python >= 3.4
+* python >= 3.6
 * i3 >= v3.11 or sway >= 1.2
 * [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/) >= v2.0.1
 * dmenu or rofi (optional)
