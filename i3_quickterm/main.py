@@ -70,13 +70,26 @@ TERMS = {
 
 
 def conf_path():
+    locations = [
+        "i3-quickterm/config.json",
+        "i3/i3-quickterm.json",  # legacy location
+    ]
     home_dir = os.environ["HOME"]
     xdg_dir = os.environ.get("XDG_CONFIG_DIR", "{}/.config".format(home_dir))
 
-    return xdg_dir + "/i3/i3-quickterm.json"
+    for l in locations:
+        fl = "{}/{}".format(xdg_dir, l)
+        if os.path.exists(fl):
+            return fl
+
+    return None
 
 
 def read_conf(fn):
+    if fn is None:
+        print("no config file! using defaults", file=sys.stderr)
+        return {}
+
     try:
         with open(fn, "r") as f:
             c = json.load(f)
