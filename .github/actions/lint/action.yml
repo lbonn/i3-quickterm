@@ -1,0 +1,15 @@
+name: Lint
+description: Formatting and static analysis
+
+runs:
+  using: composite
+  steps:
+    - id: pip
+      shell: bash
+      run: pip install -r requirements-dev.txt
+    - id: black
+      shell: bash
+      run: black --check --diff i3_quickterm setup.py
+    - id: flake8
+      shell: bash
+      run: flake8 i3_quickterm
