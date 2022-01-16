@@ -51,8 +51,14 @@ setup(
     packages=find_packages(where="."),
     python_requires=">=3.4",
     install_requires=["i3ipc>=2.0.1"],
-    extras_require={"dev": ["black", "flake8"],},
-    entry_points={"console_scripts": ["i3-quickterm=i3_quickterm:main",],},
+    extras_require={
+        "dev": ["black", "flake8"],
+    },
+    entry_points={
+        "console_scripts": [
+            "i3-quickterm=i3_quickterm:main",
+        ],
+    },
     project_urls={
         "Bug Reports": "https://github.com/lbonn/i3-quickterm/issues",
         "Source": "https://github.com/lbonn/i3-quickterm",
