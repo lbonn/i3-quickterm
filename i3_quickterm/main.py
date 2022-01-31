@@ -15,7 +15,7 @@ from pathlib import Path
 import i3ipc
 
 
-__version__ = "1.0"
+__version__ = "1.1"
 
 
 # fmt: off
