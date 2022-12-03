@@ -8,12 +8,10 @@ import os
 import shlex
 import subprocess
 import sys
-
 from contextlib import contextmanager, suppress
 from pathlib import Path
 
 import i3ipc
-
 
 __version__ = "1.1"
 
@@ -22,6 +20,7 @@ __version__ = "1.1"
 DEFAULT_CONF = {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
     "term": "urxvt",
+    "term_command": "",
     "history": "{$HOME}/.cache/i3/i3-quickterm.order",
     "ratio": 0.25,
     "pos": "top",
@@ -40,33 +39,42 @@ MARK_QT = "quickterm_{}"
 
 
 def TERM(executable, execopt="-e", execfmt="expanded", titleopt="-T"):
-    """Helper to declare a terminal in the hardcoded list"""
+    """Helper to declare a terminal in the hardcoded list."""
     if execfmt not in ("expanded", "string"):
         raise RuntimeError("Invalid execfmt")
 
-    fmt = executable
+    fmt = ""
 
     if titleopt is not None:
         fmt += " " + titleopt + " {title}"
 
     fmt += f" {execopt} {{{execfmt}}}"
 
-    return fmt
+    return {"executable": executable, "args": fmt}
 
 
-TERMS = {
-    "alacritty": TERM("alacritty", titleopt="-t"),
-    "kitty": TERM("kitty", titleopt="-T"),
-    "gnome-terminal": TERM("gnome-terminal", execopt="--", titleopt=None),
-    "roxterm": TERM("roxterm"),
-    "st": TERM("st"),
-    "termite": TERM("termite", execfmt="string", titleopt="-t"),
-    "urxvt": TERM("urxvt"),
-    "urxvtc": TERM("urxvtc"),
-    "foot": TERM("foot", titleopt="-T", execopt="", execfmt="expanded"),
-    "xfce4-terminal": TERM("xfce4-terminal", execfmt="string"),
-    "xterm": TERM("xterm"),
-}
+def GET_TERMS(conf):
+    terms = {
+        "alacritty": TERM("alacritty", titleopt="-t"),
+        "kitty": TERM("kitty", titleopt="-T"),
+        "gnome-terminal": TERM("gnome-terminal", execopt="--", titleopt=None),
+        "roxterm": TERM("roxterm"),
+        "st": TERM("st"),
+        "termite": TERM("termite", execfmt="string", titleopt="-t"),
+        "urxvt": TERM("urxvt"),
+        "urxvtc": TERM("urxvtc"),
+        "foot": TERM("foot", titleopt="-T", execopt="", execfmt="expanded"),
+        "xfce4-terminal": TERM("xfce4-terminal", execfmt="string"),
+        "xterm": TERM("xterm"),
+    }
+    executable_override = conf["term_command"]
+    return {
+        term: (
+            command["executable"] if executable_override == "" else executable_override
+        )
+        + command["args"]
+        for term, command in terms.items()
+    }
 
 
 def conf_path():
@@ -159,8 +167,8 @@ def get_current_workspace(conn):
 
 
 def toggle_quickterm_select(conf, hist=None):
-    """Hide a quickterm visible on current workspace or prompt
-    the user for a shell type"""
+    """Hide a quickterm visible on current workspace or prompt the user for a
+    shell type."""
     conn = i3ipc.Connection()
     ws = get_current_workspace(conn)
 
@@ -221,7 +229,7 @@ def toggle_quickterm(conf, shell):
 
     # does it exist already?
     if len(qt) == 0:
-        term = TERMS.get(conf["term"], conf["term"])
+        term = GET_TERMS(conf).get(conf["term"], conf["term"])
         qt_cmd = f"{sys.argv[0]} -i {shell}"
         if "_config" in conf:
             qt_cmd += f" -c {conf['_config']}"

@@ -40,6 +40,7 @@ The configuration is read from `~/.config/i3/i3-quickterm.json`.
 
 * `menu`: the dmenu-compatible application used to select the shell
 * `term`: the terminal emulator of choice
+* `term_command`: if specified and not empty, override the command to execute for the terminal emulator
 * `history`: a file to save the last-used shells order, last-used ordering
   is disabled if set to null
 * `ratio`: the percentage of the screen height to use
@@ -66,6 +67,7 @@ Unspecified keys are inherited from the defaults:
 {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
     "term": "urxvt",
+    "term_command" "",
     "history": "{$HOME}/.cache/i3/i3-quickterm.order",
     "ratio": 0.25,
     "pos": "top",
