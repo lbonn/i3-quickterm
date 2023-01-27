@@ -61,6 +61,7 @@ TERMS = {
     "roxterm": TERM("roxterm"),
     "st": TERM("st"),
     "termite": TERM("termite", execfmt="string", titleopt="-t"),
+    "terminator": TERM("terminator", execopt="-x", titleopt="-T"),
     "urxvt": TERM("urxvt"),
     "urxvtc": TERM("urxvtc"),
     "foot": TERM("foot", titleopt="-T", execopt="", execfmt="expanded"),
