@@ -24,6 +24,7 @@ DEFAULT_CONF = {
     "term": "urxvt",
     "history": "{$HOME}/.cache/i3/i3-quickterm.order",
     "ratio": 0.25,
+    "width": 0.5,
     "pos": "top",
     "shells": {
         "haskell": "ghci",
@@ -132,13 +133,14 @@ def move_back(conn, selector):
     conn.command(f"{selector} floating enable, move scratchpad")
 
 
-def pop_it(conn, mark_name, pos="top", ratio=0.25):
+def pop_it(conn, mark_name, pos="top", ratio=0.25, width_ratio=0.5):
     ws = get_current_workspace(conn)
     wx, wy = ws.rect.x, ws.rect.y
-    width, wheight = ws.rect.width, ws.rect.height
+    wwidth, wheight = ws.rect.width, ws.rect.height
 
     height = int(wheight * ratio)
-    posx = wx
+    width = int(wwidth * width_ratio)
+    posx = int(wx + ((wwidth - width) / 2))
 
     if pos == "bottom":
         margin = 6
@@ -240,7 +242,7 @@ def toggle_quickterm(conf, shell):
 
         move_back(conn, f"[con_id={qt.id}]")
         if qt.workspace().name != ws.name:
-            pop_it(conn, shell_mark, conf["pos"], conf["ratio"])
+            pop_it(conn, shell_mark, conf["pos"], conf["ratio"], conf["width"])
 
 
 def launch_inplace(conf, shell):
@@ -248,7 +250,7 @@ def launch_inplace(conf, shell):
     shell_mark = MARK_QT.format(shell)
     conn.command(f"mark {shell_mark}")
     move_back(conn, "f[con_mark={shell_mark}]")
-    pop_it(conn, shell_mark, conf["pos"], conf["ratio"])
+    pop_it(conn, shell_mark, conf["pos"], conf["ratio"], conf["width"])
     prog_cmd = expand_command(conf["shells"][shell])
     os.execvp(prog_cmd[0], prog_cmd)
 
