@@ -43,7 +43,8 @@ The configuration is read from `~/.config/i3-quickterm/config.json` or `~/.confi
 * `menu`: the dmenu-compatible application used to select the shell
 * `term`: the terminal emulator of choice
 * `history`: a file to save the last-used shells order, last-used ordering is disabled if set to null
-* `ratio`: the percentage of the screen height to use
+* `width`: the percentage of the screen width to use
+* `height`: the percentage of the screen height to use
 * `pos`: where to pop the terminal (`top` or `bottom`)
 * `shells`: registered shells (`{ name: command }`)
 
@@ -61,7 +62,8 @@ Unspecified keys are inherited from the defaults:
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
     "term": "auto",
     "history": "{$HOME}/.cache/i3-quickterm/shells.order",
-    "ratio": 0.25,
+    "width": 1.0,
+    "height": 0.25,
     "pos": "top",
     "shells": {
         "js": "node",

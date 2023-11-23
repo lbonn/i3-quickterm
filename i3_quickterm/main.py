@@ -27,7 +27,8 @@ DEFAULT_CONF = {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
     "term": "auto",
     "history": "{$HOME}/.cache/i3-quickterm/shells.order",
-    "ratio": 0.25,
+    "height": 0.25,
+    "width": 1.0,
     "pos": "top",
     "shells": {
         "js": "node",
@@ -314,14 +315,14 @@ class Quickterm:
         """Focus existing qt on current workspace"""
         ws = self.ws
         assert ws is not None
-        ratio = self.conf["ratio"]
         pos = self.conf["pos"]
 
         wx, wy = ws.rect.x, ws.rect.y
-        width, wheight = ws.rect.width, ws.rect.height
+        wwidth, wheight = ws.rect.width, ws.rect.height
 
-        height = int(wheight * ratio)
-        posx = wx
+        height = int(wheight * self.conf["height"])
+        width = int(wwidth * self.conf["width"])
+        posx = int(wx + (wwidth - width) / 2)
 
         if pos == "bottom":
             margin = 6
