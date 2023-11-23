@@ -145,6 +145,8 @@ def pop_it(conn, mark_name, pos="top", ratio=0.25, width_ratio=0.5):
     if pos == "bottom":
         margin = 6
         posy = wy + wheight - height - margin
+    elif pos == "center":
+        posy = int(wy + ((wheight - height) / 2))
     else:  # pos == 'top'
         posy = wy
 
