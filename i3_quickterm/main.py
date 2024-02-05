@@ -211,17 +211,20 @@ class VerboseConnection(i3ipc.Connection):
 
 
 class Quickterm:
-    def __init__(self, conf: Conf, shell: str):
+    def __init__(self, conf: Conf, shell: str, conn: Optional[i3ipc.Connection] = None):
         self.conf = conf
         self.shell = shell
-        self._conn = None
+        self._conn = conn
         self._ws = None
         self._ws_fetched = False
+        self._con = None
+        self._con_fetched = False
+        self._verbose = self.conf.get("_verbose", False)
 
     @property
     def conn(self) -> i3ipc.Connection:
         if self._conn is None:
-            if self.conf["_verbose"]:
+            if self._verbose:
                 self._conn = VerboseConnection()
             else:
                 self._conn = i3ipc.Connection()
@@ -229,18 +232,31 @@ class Quickterm:
 
     @property
     def ws(self) -> Optional[i3ipc.Con]:
-        if self._ws is None:
+        if not self._ws_fetched and self._ws is None:
             self._ws = get_current_workspace(self.conn)
             self._ws_fetched = True
         return self._ws
 
     @property
-    def select_mark(self) -> str:
+    def mark(self) -> str:
         if self.shell is None:
             raise RuntimeError("No shell defined")
         return MARK_QT.format(self.shell)
 
-    def con_on_workspace(self, mark: str) -> Optional[i3ipc.Con]:
+    @property
+    def con(self) -> Optional[i3ipc.Con]:
+        """Find container in complete tree"""
+        if not self._con_fetched and self._con is None:
+            node = self.conn.get_tree().find_marked(self.mark)
+            if len(node) == 0:
+                self._con = None
+            else:
+                self._con = node[0]
+            self._con_fetched = True
+        return self._con
+
+    def con_in_workspace(self, mark: str) -> Optional[i3ipc.Con]:
+        """Find container in workspace"""
         if self.ws is None:
             return None
         c = self.ws.find_marked(mark)
@@ -249,9 +265,11 @@ class Quickterm:
         return c[0]
 
     def execvp(self, cmd):
-        if self.conf["_verbose"]:
+        if self._verbose:
             print(f"execvp: {cmd}")
         os.execvp(cmd[0], cmd)
+
+    """Operations"""
 
     def launch_inplace(self):
         """Quickterm is called by itself
@@ -260,33 +278,18 @@ class Quickterm:
         process
         """
 
-        self.conn.command(f"mark {self.select_mark}")
+        self.conn.command(f"mark {self.mark}")
 
         self.focus_on_current_ws()
 
         prog_cmd = expand_command(self.conf["shells"][self.shell])
         self.execvp(prog_cmd)
 
-    def toggle(self):
-        """Toggle quickterm
+    def toggle_on_current_ws(self):
+        """If on another workspace: hide, otherwise show on current"""
+        move_to_scratchpad(self.conn, f"[con_id={self.con.id}]")
 
-        If it does not exist: create()
-        Else:
-          hide();
-          if workspace was not current:
-            focus_on_current()
-        """
-        qt_node = self.conn.get_tree().find_marked(self.select_mark)
-
-        if len(qt_node) == 0:
-            self.execute_term()
-            return
-
-        qt_node = qt_node[0]
-
-        move_to_scratchpad(self.conn, f"[con_id={qt_node.id}]")
-
-        if self.ws is not None and qt_node.workspace().name != self.ws.name:
+        if self.ws is not None and self.con.workspace().name != self.ws.name:
             self.focus_on_current_ws()
 
     def focus_on_current_ws(self):
@@ -309,7 +312,7 @@ class Quickterm:
             posy = wy
 
         self.conn.command(
-            f"[con_mark={self.select_mark}] "
+            f"[con_mark={self.mark}] "
             f"move scratchpad, "
             f"scratchpad show, "
             f"resize set {width} px {height} px, "
@@ -317,9 +320,10 @@ class Quickterm:
         )
 
     def execute_term(self):
+        """Launch i3-quickterm in a new terminal"""
         term = TERMS.get(self.conf["term"], self.conf["term"])
         qt_cmd = f"{sys.argv[0]} -i {self.shell}"
-        if self.conf["_verbose"]:
+        if self._verbose:
             qt_cmd += " -v"
         if "_config" in self.conf:
             qt_cmd += f" -c {self.conf['_config']}"
@@ -331,6 +335,41 @@ class Quickterm:
             string=quoted(qt_cmd),
         )
         self.execvp(term_cmd)
+
+
+def run_qt(qt: Quickterm, in_place: bool = False):
+    """Main logic"""
+    shell = qt.shell
+
+    if in_place:
+        if shell is None:
+            raise RuntimeError("shell should be provided when running in place")
+
+        # we are launched by ourselves: start a shell
+        qt.launch_inplace()
+        return
+
+    if shell is None:
+        c = qt.con_in_workspace(MARK_QT_PATTERN)
+        if c is not None:
+            # undefined shell and visible on workspace: hide
+            move_to_scratchpad(qt.conn, f"[con_id={c.id}]")
+            return
+
+        # undefined shell and nothing on workspace: ask for shell selection
+        shell = select_shell(qt.conf)
+        if shell is None:
+            return
+        qt.shell = shell
+
+    # show logic
+    # if it does not exist: create
+    # else: toggle on current workspace
+    if qt.con is None:
+        qt.execute_term()
+        return
+
+    qt.toggle_on_current_ws()
 
 
 def main():
@@ -365,31 +404,7 @@ def main():
 
     qt = Quickterm(conf, args.shell)
 
-    shell = args.shell
-
-    if args.in_place:
-        if shell is None:
-            raise RuntimeError("shell should be provided when running in place")
-
-        # we are launched by ourselves: start a shell
-        qt.launch_inplace()
-        return 0
-
-    if shell is None:
-        c = qt.con_on_workspace(MARK_QT_PATTERN)
-        if c is not None:
-            # undefined shell and visible on workspace: hide
-            move_to_scratchpad(qt.conn, f"[con_id={c.id}]")
-            return 0
-
-        # undefined shell and nothing on workspace: ask for shell selection
-        shell = select_shell(conf)
-        if shell is None:
-            return 0
-        qt.shell = shell
-
-    # main toggle logic
-    qt.toggle()
+    run_qt(qt)
 
     return 0
 

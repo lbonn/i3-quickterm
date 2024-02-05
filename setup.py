@@ -33,7 +33,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/lbonn/i3-quickterm",
     author="lbonn",
-    author_email="bonnans.l@gmail.com",
+    author_email="github@lbonnans.net",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: End Users/Desktop",
@@ -52,7 +52,7 @@ setup(
     python_requires=">=3.6",
     install_requires=["i3ipc>=2.0.1"],
     extras_require={
-        "dev": ["black", "flake8"],
+        "dev": ["black", "flake8", "pytest"],
     },
     entry_points={
         "console_scripts": [
