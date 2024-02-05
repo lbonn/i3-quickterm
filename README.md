@@ -38,7 +38,7 @@ The configuration is read from `~/.config/i3-quickterm/config.json` or `~/.confi
 * `shells`: registered shells (`{ name: command }`)
 
 `term` can be either:
-- the name of a terminal from the [supported list](##Supported terminals).
+- the name of a terminal from the [supported list](#supported-terminals).
 - a format string, like this one: `urxvt -t {title} -e {expanded}` with the correct arguments format of your terminal. Some terminals, like xfce4-terminal need the command argument to be passed as a string. In this case, replace `{expanded}` by `{string}`
 
 `menu`, `term`, `history` and `shell` can contain placeholders for environment variables: `{$var}`.
