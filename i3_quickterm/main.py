@@ -8,7 +8,10 @@ import os
 import shlex
 import subprocess
 import sys
+import traceback
 
+from collections.abc import Generator
+from typing import Any, Literal, Optional, TextIO
 from contextlib import contextmanager, suppress
 from pathlib import Path
 
@@ -37,8 +40,17 @@ DEFAULT_CONF = {
 MARK_QT_PATTERN = "quickterm_.*"
 MARK_QT = "quickterm_{}"
 
+# types
+ExecFmtMode = Literal["expanded", "string"]
+Conf = dict[str, Any]
 
-def TERM(executable, execopt="-e", execfmt="expanded", titleopt="-T"):
+
+def TERM(
+    executable: str,
+    execopt: str = "-e",
+    execfmt: ExecFmtMode = "expanded",
+    titleopt: Optional[str] = "-T",
+):
     """Helper to declare a terminal in the hardcoded list"""
     if execfmt not in ("expanded", "string"):
         raise RuntimeError("Invalid execfmt")
@@ -69,7 +81,22 @@ TERMS = {
 }
 
 
-def conf_path():
+def quoted(s: str) -> str:
+    return "'" + s + "'"
+
+
+def expand_command(cmd: str, **rplc_map):
+    d = {"$" + k: v for k, v in os.environ.items()}
+    d.update(rplc_map)
+
+    return shlex.split(cmd.format(**d))
+
+
+def term_title(shell: str) -> str:
+    return f"{shell} - i3-quickterm"
+
+
+def conf_path() -> Optional[str]:
     locations = [
         "i3-quickterm/config.json",
         "i3/i3-quickterm.json",  # legacy location
@@ -85,7 +112,7 @@ def conf_path():
     return None
 
 
-def read_conf(fn):
+def read_conf(fn) -> Conf:
     if fn is None:
         print("no config file! using defaults", file=sys.stderr)
         return {}
@@ -100,7 +127,7 @@ def read_conf(fn):
 
 
 @contextmanager
-def get_history_file(conf):
+def read_history_file(conf: Conf) -> Generator[Optional[TextIO], None, None]:
     if conf["history"] is None:
         yield None
         return
@@ -120,58 +147,9 @@ def get_history_file(conf):
         f.close()
 
 
-def expand_command(cmd, **rplc_map):
-    d = {"$" + k: v for k, v in os.environ.items()}
-    d.update(rplc_map)
-
-    return shlex.split(cmd.format(**d))
-
-
-def move_back(conn, selector):
-    conn.command(f"{selector} floating enable, move scratchpad")
-
-
-def pop_it(conn, mark_name, pos="top", ratio=0.25):
-    ws = get_current_workspace(conn)
-    wx, wy = ws.rect.x, ws.rect.y
-    width, wheight = ws.rect.width, ws.rect.height
-
-    height = int(wheight * ratio)
-    posx = wx
-
-    if pos == "bottom":
-        margin = 6
-        posy = wy + wheight - height - margin
-    else:  # pos == 'top'
-        posy = wy
-
-    conn.command(
-        f"[con_mark={mark_name}],"
-        f"move scratchpad,"
-        f"scratchpad show,"
-        f"resize set {width} px {height} px,"
-        f"move absolute position {posx}px {posy}px"
-    )
-
-
-def get_current_workspace(conn):
-    return conn.get_tree().find_focused().workspace()
-
-
-def toggle_quickterm_select(conf, hist=None):
-    """Hide a quickterm visible on current workspace or prompt
-    the user for a shell type"""
-    conn = i3ipc.Connection()
-    ws = get_current_workspace(conn)
-
-    # is there a quickterm opened in the current workspace?
-    qt = ws.find_marked(MARK_QT_PATTERN)
-    if qt:
-        qt = qt[0]
-        move_back(conn, f"[con_id={qt.id}]")
-        return
-
-    with get_history_file(conf) as hist:
+def select_shell(conf: Conf) -> Optional[str]:
+    """Select shell to use using menu application"""
+    with read_history_file(conf) as hist:
         # compute the list from conf + (maybe) history
         hist_list = None
         if hist is not None:
@@ -188,14 +166,19 @@ def toggle_quickterm_select(conf, hist=None):
             expand_command(conf["menu"]), stdin=subprocess.PIPE, stdout=subprocess.PIPE
         )
 
+        assert proc.stdin is not None
+
         for r in shells:
             proc.stdin.write((r + "\n").encode())
         stdout, _ = proc.communicate()
 
         shell = stdout.decode().strip()
 
+        if len(shell) == 0:
+            return None
+
         if shell not in conf["shells"]:
-            return
+            raise RuntimeError(f"Unknown shell: {shell}")
 
         if hist is not None:
             # put the selected shell on top
@@ -203,53 +186,131 @@ def toggle_quickterm_select(conf, hist=None):
             hist.truncate(0)
             json.dump(shells, hist)
 
-    toggle_quickterm(conf, shell)
+        return shell
 
 
-def quoted(s):
-    return "'" + s + "'"
+def move_to_scratchpad(conn: i3ipc.Connection, selector: str):
+    conn.command(f"{selector} floating enable, move scratchpad")
 
 
-def term_title(shell):
-    return f"{shell} - i3-quickterm"
+def get_current_workspace(conn: i3ipc.Connection):
+    focused = conn.get_tree().find_focused()
+    if not focused:
+        return None
+    return focused.workspace()
 
 
-def toggle_quickterm(conf, shell):
-    conn = i3ipc.Connection()
-    shell_mark = MARK_QT.format(shell)
-    qt = conn.get_tree().find_marked(shell_mark)
+class Quickterm:
+    def __init__(self, conf: Conf, shell: str):
+        self.conf = conf
+        self.shell = shell
+        self._conn = None
+        self._ws = None
+        self._ws_fetched = False
 
-    # does it exist already?
-    if len(qt) == 0:
-        term = TERMS.get(conf["term"], conf["term"])
-        qt_cmd = f"{sys.argv[0]} -i {shell}"
-        if "_config" in conf:
-            qt_cmd += f" -c {conf['_config']}"
+    @property
+    def conn(self) -> i3ipc.Connection:
+        if self._conn is None:
+            self._conn = i3ipc.Connection()
+        return self._conn
+
+    @property
+    def ws(self) -> Optional[i3ipc.Con]:
+        if self._ws is None:
+            self._ws = get_current_workspace(self.conn)
+            self._ws_fetched = True
+        return self._ws
+
+    @property
+    def select_mark(self) -> str:
+        if self.shell is None:
+            raise RuntimeError("No shell defined")
+        return MARK_QT.format(self.shell)
+
+    def con_on_workspace(self, mark: str) -> Optional[i3ipc.Con]:
+        if self.ws is None:
+            return None
+        c = self.ws.find_marked(mark)
+        if len(c) == 0:
+            return None
+        return c[0]
+
+    def launch_inplace(self):
+        """Quickterm is called by itself
+
+        Mark current window, move back and focus again, then run shell in current process
+        """
+
+        self.conn.command(f"mark {self.select_mark}")
+
+        move_to_scratchpad(self.conn, "f[con_mark={self.select_mark}]")
+        self.focus_on_current_ws()
+
+        prog_cmd = expand_command(self.conf["shells"][self.shell])
+        os.execvp(prog_cmd[0], prog_cmd)
+
+    def toggle(self):
+        """Toggle quickterm
+
+        If it does not exist: create()
+        Else:
+          hide();
+          if workspace was not current:
+            focus_on_current()
+        """
+        qt_node = self.conn.get_tree().find_marked(self.select_mark)
+
+        if len(qt_node) == 0:
+            self.execute_term()
+            return
+
+        qt_node = qt_node[0]
+
+        move_to_scratchpad(self.conn, f"[con_id={qt_node.id}]")
+
+        if self.ws is not None and qt_node.workspace().name != self.ws.name:
+            self.focus_on_current_ws()
+
+    def focus_on_current_ws(self):
+        """Focus existing qt on current workspace"""
+        ws = self.ws
+        assert ws is not None
+        ratio = self.conf["ratio"]
+        pos = self.conf["pos"]
+
+        wx, wy = ws.rect.x, ws.rect.y
+        width, wheight = ws.rect.width, ws.rect.height
+
+        height = int(wheight * ratio)
+        posx = wx
+
+        if pos == "bottom":
+            margin = 6
+            posy = wy + wheight - height - margin
+        else:  # pos == 'top'
+            posy = wy
+
+        self.conn.command(
+            f"[con_mark={self.select_mark}],"
+            f"move scratchpad,"
+            f"scratchpad show,"
+            f"resize set {width} px {height} px,"
+            f"move absolute position {posx}px {posy}px"
+        )
+
+    def execute_term(self):
+        term = TERMS.get(self.conf["term"], self.conf["term"])
+        qt_cmd = f"{sys.argv[0]} -i {self.shell}"
+        if "_config" in self.conf:
+            qt_cmd += f" -c {self.conf['_config']}"
 
         term_cmd = expand_command(
             term,
-            title=quoted(term_title(shell)),
+            title=quoted(term_title(self.shell)),
             expanded=qt_cmd,
             string=quoted(qt_cmd),
         )
         os.execvp(term_cmd[0], term_cmd)
-    else:
-        qt = qt[0]
-        ws = get_current_workspace(conn)
-
-        move_back(conn, f"[con_id={qt.id}]")
-        if qt.workspace().name != ws.name:
-            pop_it(conn, shell_mark, conf["pos"], conf["ratio"])
-
-
-def launch_inplace(conf, shell):
-    conn = i3ipc.Connection()
-    shell_mark = MARK_QT.format(shell)
-    conn.command(f"mark {shell_mark}")
-    move_back(conn, "f[con_mark={shell_mark}]")
-    pop_it(conn, shell_mark, conf["pos"], conf["ratio"])
-    prog_cmd = expand_command(conf["shells"][shell])
-    os.execvp(prog_cmd[0], prog_cmd)
 
 
 def main():
@@ -275,19 +336,44 @@ def main():
     else:
         conf.update(read_conf(conf_path()))
 
-    if args.shell is None:
-        toggle_quickterm_select(conf)
-        sys.exit(0)
-
-    if args.shell not in conf["shells"]:
+    if args.shell is not None and args.shell not in conf["shells"]:
         print(f"unknown shell: {args.shell}", file=sys.stderr)
-        sys.exit(1)
+        return 1
+
+    qt = Quickterm(conf, args.shell)
+
+    shell = args.shell
 
     if args.in_place:
-        launch_inplace(conf, args.shell)
-    else:
-        toggle_quickterm(conf, args.shell)
+        if shell is None:
+            raise RuntimeError("shell should be provided when running in place")
+
+        # we are launched by ourselves: start a shell
+        qt.launch_inplace()
+        return 0
+
+    if shell is None:
+        c = qt.con_on_workspace(MARK_QT_PATTERN)
+        if c is not None:
+            # undefined shell and visible on workspace: hide
+            move_to_scratchpad(qt.conn, f"[con_id={c.id}]")
+            return 0
+
+        # undefined shell and nothing on workspace: ask for shell selection
+        shell = select_shell(conf)
+        if shell is None:
+            return 0
+        qt.shell = shell
+
+    # main toggle logic
+    qt.toggle()
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        sys.exit(main())
+    except Exception as e:
+        print(traceback.format_exc())
+        sys.exit(1)
