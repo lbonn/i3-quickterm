@@ -404,7 +404,7 @@ def main():
 
     qt = Quickterm(conf, args.shell)
 
-    run_qt(qt)
+    run_qt(qt, args.in_place)
 
     return 0
 
