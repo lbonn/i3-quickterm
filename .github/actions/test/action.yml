@@ -6,7 +6,9 @@ runs:
   steps:
     - id: pip
       shell: bash
-      run: pip install -r requirements-dev.txt
+      run: |
+        pip install -r requirements-dev.txt
+        pip install -e .
     - id: black
       shell: bash
       run: black --check --diff i3_quickterm setup.py
