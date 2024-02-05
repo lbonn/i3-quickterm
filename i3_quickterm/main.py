@@ -12,7 +12,9 @@ import traceback
 
 from collections.abc import Generator
 from typing import Any, Literal, Optional, TextIO
+
 from contextlib import contextmanager, suppress
+from functools import wraps
 from pathlib import Path
 
 import i3ipc
@@ -200,6 +202,15 @@ def get_current_workspace(conn: i3ipc.Connection):
     return focused.workspace()
 
 
+class VerboseConnection(i3ipc.Connection):
+    def __init__(self):
+        super().__init__()
+
+    def command(self, payload: str, *kargs, **kwargs):
+        print(f"command: {payload}")
+        return super().command(payload, *kargs, **kwargs)
+
+
 class Quickterm:
     def __init__(self, conf: Conf, shell: str):
         self.conf = conf
@@ -211,7 +222,10 @@ class Quickterm:
     @property
     def conn(self) -> i3ipc.Connection:
         if self._conn is None:
-            self._conn = i3ipc.Connection()
+            if self.conf["_verbose"]:
+                self._conn = VerboseConnection()
+            else:
+                self._conn = i3ipc.Connection()
         return self._conn
 
     @property
@@ -235,6 +249,11 @@ class Quickterm:
             return None
         return c[0]
 
+    def execvp(self, cmd):
+        if self.conf["_verbose"]:
+            print(f"execvp: {cmd}")
+        os.execvp(cmd[0], cmd)
+
     def launch_inplace(self):
         """Quickterm is called by itself
 
@@ -243,11 +262,11 @@ class Quickterm:
 
         self.conn.command(f"mark {self.select_mark}")
 
-        move_to_scratchpad(self.conn, "f[con_mark={self.select_mark}]")
+        move_to_scratchpad(self.conn, f"[con_mark={self.select_mark}]")
         self.focus_on_current_ws()
 
         prog_cmd = expand_command(self.conf["shells"][self.shell])
-        os.execvp(prog_cmd[0], prog_cmd)
+        self.execvp(prog_cmd)
 
     def toggle(self):
         """Toggle quickterm
@@ -291,16 +310,18 @@ class Quickterm:
             posy = wy
 
         self.conn.command(
-            f"[con_mark={self.select_mark}],"
-            f"move scratchpad,"
-            f"scratchpad show,"
-            f"resize set {width} px {height} px,"
+            f"[con_mark={self.select_mark}] "
+            f"move scratchpad, "
+            f"scratchpad show, "
+            f"resize set {width} px {height} px, "
             f"move absolute position {posx}px {posy}px"
         )
 
     def execute_term(self):
         term = TERMS.get(self.conf["term"], self.conf["term"])
         qt_cmd = f"{sys.argv[0]} -i {self.shell}"
+        if self.conf["_verbose"]:
+            qt_cmd += " -v"
         if "_config" in self.conf:
             qt_cmd += f" -c {self.conf['_config']}"
 
@@ -310,12 +331,13 @@ class Quickterm:
             expanded=qt_cmd,
             string=quoted(qt_cmd),
         )
-        os.execvp(term_cmd[0], term_cmd)
+        self.execvp(term_cmd)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--in-place", dest="in_place", action="store_true")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true")
     parser.add_argument(
         "-c",
         "--config",
@@ -335,6 +357,8 @@ def main():
         conf["_config"] = args.config
     else:
         conf.update(read_conf(conf_path()))
+
+    conf["_verbose"] = args.verbose
 
     if args.shell is not None and args.shell not in conf["shells"]:
         print(f"unknown shell: {args.shell}", file=sys.stderr)
