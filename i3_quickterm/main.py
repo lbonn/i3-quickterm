@@ -6,12 +6,13 @@ import fcntl
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 import traceback
 
 from collections.abc import Generator
-from typing import Any, Literal, Optional, TextIO
+from typing import cast, Any, Literal, Optional, TextIO
 
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -25,7 +26,7 @@ __version__ = "1.1"
 # fmt: off
 DEFAULT_CONF = {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
-    "term": "urxvt",
+    "term": "auto",
     "history": "{$HOME}/.cache/i3-quickterm/shells.order",
     "ratio": 0.25,
     "pos": "top",
@@ -146,6 +147,22 @@ def read_history_file(conf: Conf) -> Generator[Optional[TextIO], None, None]:
     finally:
         fcntl.lockf(f, fcntl.LOCK_UN)
         f.close()
+
+
+def select_terminal(term_fmt: str) -> str:
+    if term_fmt == "auto":
+        for t, fmt in sorted(TERMS.items()):
+            if shutil.which(t) is not None:
+                return fmt
+        raise RuntimeError(
+            f"Could not find a suitable terminal "
+            f"in the predefined list: {sorted(TERMS.keys())}"
+        )
+    elif term_fmt in TERMS:
+        # one of the pre-configured terminals
+        return cast(str, TERMS.get(term_fmt))
+
+    return term_fmt
 
 
 def select_shell(conf: Conf) -> Optional[str]:
@@ -321,7 +338,7 @@ class Quickterm:
 
     def execute_term(self):
         """Launch i3-quickterm in a new terminal"""
-        term = TERMS.get(self.conf["term"], self.conf["term"])
+        term = select_terminal(self.conf["term"])
         qt_cmd = f"{sys.argv[0]} -i {self.shell}"
         if self._verbose:
             qt_cmd += " -v"

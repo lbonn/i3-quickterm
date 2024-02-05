@@ -11,6 +11,16 @@ A small drop-down terminal for [i3wm](https://i3wm.org/) and [sway](https://sway
 * adapt to screen width
 * multi-monitor aware
 
+## Installation
+
+Via pip:
+
+```
+pip install i3-quickterm
+```
+
+Or check the the repology badge above to check if it is packaged by your distribution.
+
 ## Usage
 
 When launched, it will minimize the quickterm on the current screen if there is one.  Otherwise, it will either prompt the user for the shell to open or use the one supplied in argument.
@@ -39,6 +49,7 @@ The configuration is read from `~/.config/i3-quickterm/config.json` or `~/.confi
 
 `term` can be either:
 - the name of a terminal from the [supported list](#supported-terminals).
+- `auto` to select the first existing terminal of the list above (only to provide friendler defaults, not recommended otherwise)
 - a format string, like this one: `urxvt -t {title} -e {expanded}` with the correct arguments format of your terminal. Some terminals, like xfce4-terminal need the command argument to be passed as a string. In this case, replace `{expanded}` by `{string}`
 
 `menu`, `term`, `history` and `shell` can contain placeholders for environment variables: `{$var}`.
@@ -48,7 +59,7 @@ Unspecified keys are inherited from the defaults:
 ```
 {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
-    "term": "urxvt",
+    "term": "auto",
     "history": "{$HOME}/.cache/i3-quickterm/shells.order",
     "ratio": 0.25,
     "pos": "top",

@@ -16,6 +16,17 @@ def execvp():
 
 
 @pytest.fixture
+def shutil_roxterm_only():
+    def roxterm_which(p):
+        if p == "roxterm":
+            return "/usr/bin/roxterm"
+        return None
+
+    with unittest.mock.patch("shutil.which", wraps=roxterm_which) as mock_execvp:
+        yield mock_execvp
+
+
+@pytest.fixture
 def i3ipc_con():
     con = unittest.mock.Mock(i3ipc.Con)
     con.find_marked.return_value = [con]
@@ -41,6 +52,7 @@ def conf(tmpdir):
     c.update(
         {
             "menu": "/bin/true",
+            "term": "xterm",
             "shells": {"shell": "bash"},
             "verbose": True,
             "history": f"{str(tmpdir)}/shells.order",
@@ -82,14 +94,28 @@ def test_launch_inplace(i3ipc_connection, conf, execvp):
 
 
 def test_execute_term(i3ipc_connection, i3ipc_con, conf, execvp):
-    """Create term (when not found)"""
+    """Create term"""
     i3ipc_con.find_marked.return_value = []
 
     qt = Quickterm(conf, "shell", conn=i3ipc_connection)
 
     qt.execute_term()
 
-    execvp.assert_has_calls([call("urxvt", ANY)])
+    execvp.assert_has_calls([call("xterm", ANY)])
+
+
+def test_execute_term_auto(
+    i3ipc_connection, i3ipc_con, conf, execvp, shutil_roxterm_only
+):
+    """Auto-detect and execute term"""
+    conf["term"] = "auto"
+    i3ipc_con.find_marked.return_value = []
+
+    qt = Quickterm(conf, "shell", conn=i3ipc_connection)
+
+    qt.execute_term()
+
+    execvp.assert_has_calls([call("roxterm", ANY)])
 
 
 def test_toggle_hide(i3ipc_connection, conf, execvp):
