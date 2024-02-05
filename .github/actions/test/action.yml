@@ -11,10 +11,10 @@ runs:
         pip install -e .
     - id: black
       shell: bash
-      run: black --check --diff i3_quickterm setup.py
+      run: black --check --diff i3_quickterm tests setup.py
     - id: flake8
       shell: bash
-      run: flake8 i3_quickterm
+      run: flake8 i3_quickterm tests
     - id: pytest
       shell: bash
       run: pytest -vv

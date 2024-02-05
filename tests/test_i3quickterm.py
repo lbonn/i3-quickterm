@@ -38,12 +38,14 @@ def i3ipc_connection(i3ipc_con):
 @pytest.fixture
 def conf(tmpdir):
     c = copy.deepcopy(DEFAULT_CONF)
-    c.update({
-        "menu": "/bin/true",
-        "shells": {"shell": "bash"},
-        "verbose": True,
-        "history": f"{str(tmpdir)}/shells.order",
-    })
+    c.update(
+        {
+            "menu": "/bin/true",
+            "shells": {"shell": "bash"},
+            "verbose": True,
+            "history": f"{str(tmpdir)}/shells.order",
+        }
+    )
     return c
 
 
@@ -67,12 +69,16 @@ def test_launch_inplace(i3ipc_connection, conf, execvp):
 
     qt.launch_inplace()
 
-    i3ipc_connection.command.assert_has_calls([
-        call("mark quickterm_shell"),
-        call("[con_mark=quickterm_shell] move scratchpad, scratchpad show, "
-             "resize set 0 px 0 px, move absolute position 0px 0px"),
-    ])
-    execvp.assert_called_once_with('bash', ['bash'])
+    i3ipc_connection.command.assert_has_calls(
+        [
+            call("mark quickterm_shell"),
+            call(
+                "[con_mark=quickterm_shell] move scratchpad, scratchpad show, "
+                "resize set 0 px 0 px, move absolute position 0px 0px"
+            ),
+        ]
+    )
+    execvp.assert_called_once_with("bash", ["bash"])
 
 
 def test_execute_term(i3ipc_connection, i3ipc_con, conf, execvp):
@@ -83,7 +89,7 @@ def test_execute_term(i3ipc_connection, i3ipc_con, conf, execvp):
 
     qt.execute_term()
 
-    execvp.assert_has_calls([call('urxvt', ANY)])
+    execvp.assert_has_calls([call("urxvt", ANY)])
 
 
 def test_toggle_hide(i3ipc_connection, conf, execvp):
@@ -93,7 +99,8 @@ def test_toggle_hide(i3ipc_connection, conf, execvp):
     qt.toggle_on_current_ws()
 
     i3ipc_connection.command.assert_called_once_with(
-        '[con_id=0] floating enable, move scratchpad')
+        "[con_id=0] floating enable, move scratchpad"
+    )
     assert execvp.call_count == 0
 
 
@@ -110,15 +117,20 @@ def test_toggle_from_other_workspace(i3ipc_connection, i3ipc_con, conf, execvp):
         ws.rect = i3ipc.Rect({"x": 0, "y": 0, "height": 0, "width": 0})
         k += 1
         return ws
+
     i3ipc_con.workspace.side_effect = new_workspace
 
     qt.toggle_on_current_ws()
 
-    i3ipc_connection.command.assert_has_calls([
-        call('[con_id=0] floating enable, move scratchpad'),
-        call('[con_mark=quickterm_shell] move scratchpad, scratchpad show, '
-             'resize set 0 px 0 px, move absolute position 0px 0px'),
-    ])
+    i3ipc_connection.command.assert_has_calls(
+        [
+            call("[con_id=0] floating enable, move scratchpad"),
+            call(
+                "[con_mark=quickterm_shell] move scratchpad, scratchpad show, "
+                "resize set 0 px 0 px, move absolute position 0px 0px"
+            ),
+        ]
+    )
     assert execvp.call_count == 0
 
 
@@ -154,7 +166,7 @@ def test_run_qt_noshell_select_none(quickterm_mock):
 
     run_qt(qt)
 
-    assert qt.shell == None
+    assert qt.shell is None
 
 
 def test_run_qt_noshell_select_one(quickterm_mock):
