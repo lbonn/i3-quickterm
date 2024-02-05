@@ -262,7 +262,6 @@ class Quickterm:
 
         self.conn.command(f"mark {self.select_mark}")
 
-        move_to_scratchpad(self.conn, f"[con_mark={self.select_mark}]")
         self.focus_on_current_ws()
 
         prog_cmd = expand_command(self.conf["shells"][self.shell])
