@@ -49,11 +49,10 @@ Unspecified keys are inherited from the defaults:
 {
     "menu": "rofi -dmenu -p 'quickterm: ' -no-custom -auto-select",
     "term": "urxvt",
-    "history": "{$HOME}/.cache/i3/i3-quickterm.order",
+    "history": "{$HOME}/.cache/i3-quickterm/shells.order",
     "ratio": 0.25,
     "pos": "top",
     "shells": {
-        "haskell": "ghci",
         "js": "node",
         "python": "ipython3 --no-banner",
         "shell": "{$SHELL}"
