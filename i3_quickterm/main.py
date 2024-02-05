@@ -14,7 +14,6 @@ from collections.abc import Generator
 from typing import Any, Literal, Optional, TextIO
 
 from contextlib import contextmanager, suppress
-from functools import wraps
 from pathlib import Path
 
 import i3ipc
@@ -257,7 +256,8 @@ class Quickterm:
     def launch_inplace(self):
         """Quickterm is called by itself
 
-        Mark current window, move back and focus again, then run shell in current process
+        Mark current window, move back and focus again, then run shell in current
+        process
         """
 
         self.conn.command(f"mark {self.select_mark}")
@@ -397,6 +397,6 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except Exception as e:
+    except Exception:
         print(traceback.format_exc())
         sys.exit(1)
