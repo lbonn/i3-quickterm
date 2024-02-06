@@ -228,12 +228,12 @@ class VerboseConnection(i3ipc.Connection):
 
 
 class Quickterm:
-    def __init__(self, conf: Conf, shell: str, conn: Optional[i3ipc.Connection] = None):
+    def __init__(self, conf: Conf, shell: str):
         self.conf = conf
         self.shell = shell
-        self._conn = conn
         self._ws = None
         self._ws_fetched = False
+        self._conn = None
         self._con = None
         self._con_fetched = False
         self._verbose = self.conf.get("_verbose", False)

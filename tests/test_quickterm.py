@@ -29,7 +29,7 @@ def shutil_roxterm_only():
 
 def test_launch_inplace(i3ipc_connection, conf, execvp):
     """In place: just call the shell"""
-    qt = Quickterm(conf, "shell", conn=i3ipc_connection)
+    qt = Quickterm(conf, "shell")
 
     qt.launch_inplace()
 
@@ -49,7 +49,7 @@ def test_execute_term(i3ipc_connection, i3ipc_con, conf, execvp):
     """Create term"""
     i3ipc_con.find_marked.return_value = []
 
-    qt = Quickterm(conf, "shell", conn=i3ipc_connection)
+    qt = Quickterm(conf, "shell")
 
     qt.execute_term()
 
@@ -63,7 +63,7 @@ def test_execute_term_auto(
     conf["term"] = "auto"
     i3ipc_con.find_marked.return_value = []
 
-    qt = Quickterm(conf, "shell", conn=i3ipc_connection)
+    qt = Quickterm(conf, "shell")
 
     qt.execute_term()
 
@@ -72,7 +72,7 @@ def test_execute_term_auto(
 
 def test_toggle_hide(i3ipc_connection, conf, execvp):
     """Toggle with visible term: hide"""
-    qt = Quickterm(conf, "shell", conn=i3ipc_connection)
+    qt = Quickterm(conf, "shell")
 
     qt.toggle_on_current_ws()
 
@@ -84,7 +84,7 @@ def test_toggle_hide(i3ipc_connection, conf, execvp):
 
 def test_toggle_from_other_workspace(i3ipc_connection, i3ipc_con, conf, execvp):
     """Toggle with visible term on another workspace: hide and show on current"""
-    qt = Quickterm(conf, "shell", conn=i3ipc_connection)
+    qt = Quickterm(conf, "shell")
 
     k = 0
 

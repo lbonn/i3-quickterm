@@ -39,13 +39,6 @@ def conf_file_factory(tmp_path):
 
 
 @pytest.fixture
-def i3ipc_connection(i3ipc_con):
-    conn = unittest.mock.Mock(i3ipc.Connection)
-    conn.get_tree.return_value = i3ipc_con
-    return conn
-
-
-@pytest.fixture
 def i3ipc_con():
     con = unittest.mock.Mock(i3ipc.Con)
     con.find_marked.return_value = [con]
@@ -56,6 +49,15 @@ def i3ipc_con():
     ws.name = "ws"
     ws.rect = i3ipc.Rect({"x": 0, "y": 0, "height": 0, "width": 0})
     return con
+
+
+@pytest.fixture
+def i3ipc_connection(i3ipc_con):
+    conn = unittest.mock.Mock(i3ipc.Connection)
+    conn.get_tree.return_value = i3ipc_con
+    with unittest.mock.patch("i3ipc.Connection") as cm:
+        cm.return_value = conn
+        yield conn
 
 
 @pytest.fixture
