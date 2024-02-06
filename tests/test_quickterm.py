@@ -1,8 +1,6 @@
-from i3_quickterm.main import Quickterm, run_qt, DEFAULT_CONF
+from i3_quickterm.main import Quickterm
 
 import i3ipc
-
-import copy
 
 import pytest
 import unittest.mock
@@ -24,52 +22,6 @@ def shutil_roxterm_only():
 
     with unittest.mock.patch("shutil.which", wraps=roxterm_which) as mock_execvp:
         yield mock_execvp
-
-
-@pytest.fixture
-def i3ipc_con():
-    con = unittest.mock.Mock(i3ipc.Con)
-    con.find_marked.return_value = [con]
-    con.find_focused.return_value = con
-    con.id = "0"
-    ws = unittest.mock.MagicMock()
-    con.workspace.return_value = ws
-    ws.name = "ws"
-    ws.rect = i3ipc.Rect({"x": 0, "y": 0, "height": 0, "width": 0})
-    return con
-
-
-@pytest.fixture
-def i3ipc_connection(i3ipc_con):
-    conn = unittest.mock.Mock(i3ipc.Connection)
-    conn.get_tree.return_value = i3ipc_con
-    return conn
-
-
-@pytest.fixture
-def conf(tmpdir):
-    c = copy.deepcopy(DEFAULT_CONF)
-    c.update(
-        {
-            "menu": "/bin/true",
-            "term": "xterm",
-            "shells": {"shell": "bash"},
-            "verbose": True,
-            "history": f"{str(tmpdir)}/shells.order",
-        }
-    )
-    return c
-
-
-@pytest.fixture
-def quickterm_mock(i3ipc_connection, conf):
-    qt = unittest.mock.Mock(Quickterm)
-    qt.shell = None
-    qt.con = None
-    qt.conf = conf
-    qt.conn = i3ipc_connection
-
-    return qt
 
 
 """Test quickterm operations"""
@@ -158,63 +110,3 @@ def test_toggle_from_other_workspace(i3ipc_connection, i3ipc_con, conf, execvp):
         ]
     )
     assert execvp.call_count == 0
-
-
-"""Test logic"""
-
-
-def test_run_qt_inplace_no_shell(quickterm_mock):
-    with pytest.raises(RuntimeError):
-        run_qt(quickterm_mock, in_place=True)
-
-
-def test_run_qt_inplace(quickterm_mock):
-    qt = quickterm_mock
-    qt.shell = "bash"
-    run_qt(qt, in_place=True)
-    qt.launch_inplace.assert_called_once()
-
-
-def test_run_qt_noshell_hide(quickterm_mock, i3ipc_connection, i3ipc_con):
-    qt = quickterm_mock
-    qt.con_in_workspace.return_value = i3ipc_con
-
-    run_qt(qt)
-
-    i3ipc_connection.command.assert_called_once_with(
-        "[con_id=0] floating enable, move scratchpad"
-    )
-
-
-def test_run_qt_noshell_select_none(quickterm_mock):
-    qt = quickterm_mock
-    qt.con_in_workspace.return_value = None
-
-    run_qt(qt)
-
-    assert qt.shell is None
-
-
-def test_run_qt_noshell_select_one(quickterm_mock):
-    qt = quickterm_mock
-    qt.con_in_workspace.return_value = None
-    qt.conf["menu"] = "echo shell"
-
-    run_qt(qt)
-
-    assert qt.shell == "shell"
-
-
-def test_run_qt_execute_shell(quickterm_mock):
-    qt = quickterm_mock
-    qt.shell = "bash"
-    run_qt(qt)
-    qt.execute_term.assert_called_once()
-
-
-def test_run_qt_toggle_on_current_ws(i3ipc_con, quickterm_mock):
-    qt = quickterm_mock
-    qt.shell = "bash"
-    qt.con = i3ipc_con
-    run_qt(qt)
-    qt.toggle_on_current_ws.assert_called_once()

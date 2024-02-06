@@ -389,8 +389,8 @@ def run_qt(qt: Quickterm, in_place: bool = False):
     qt.toggle_on_current_ws()
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="i3-quickterm")
     parser.add_argument("-i", "--in-place", dest="in_place", action="store_true")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true")
     parser.add_argument(
@@ -404,7 +404,7 @@ def main():
     parser.add_argument(
         "--version", action="version", version=f"%(prog)s {__version__}"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     conf = copy.deepcopy(DEFAULT_CONF)
     if args.config:
@@ -428,7 +428,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        sys.exit(main(sys.argv[1:]))
     except Exception:
         print(traceback.format_exc())
         sys.exit(1)
