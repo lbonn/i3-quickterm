@@ -11,8 +11,7 @@ import subprocess
 import sys
 import traceback
 
-from collections.abc import Generator
-from typing import cast, Any, Literal, Optional, TextIO
+from typing import cast, Any, Dict, Generator, Literal, Optional, TextIO
 
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -44,7 +43,7 @@ MARK_QT = "quickterm_{}"
 
 # types
 ExecFmtMode = Literal["expanded", "string"]
-Conf = dict[str, Any]
+Conf = Dict[str, Any]
 
 
 def TERM(

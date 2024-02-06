@@ -90,7 +90,7 @@ If you'd like to add another terminal (or correct an error), please open a pull 
 
 ## Requirements
 
-* python >= 3.6
+* python >= 3.8
 * i3 >= v3.11 or sway >= 1.2
 * [i3ipc-python](https://i3ipc-python.readthedocs.io/en/latest/) >= v2.0.1
 * dmenu or rofi (optional)
