@@ -1,5 +1,6 @@
 black==24.1.1
 click==8.1.7
+coverage==7.4.1
 flake8==7.0.0
 iniconfig==2.0.0
 mccabe==0.7.0
@@ -11,5 +12,6 @@ pluggy==1.4.0
 pycodestyle==2.11.1
 pyflakes==3.2.0
 pytest==8.0.0
+python-xlib==0.33
 tomli==2.0.1
 typing_extensions==4.9.0

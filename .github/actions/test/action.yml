@@ -17,4 +17,6 @@ runs:
       run: flake8 i3_quickterm tests
     - id: pytest
       shell: bash
-      run: pytest -vv
+      run: |
+        coverage run -m pytest -vv
+        coverage report -m

@@ -52,7 +52,7 @@ setup(
     python_requires=">=3.6",
     install_requires=["i3ipc>=2.0.1"],
     extras_require={
-        "dev": ["black", "flake8", "pytest"],
+        "dev": ["black", "coverage", "flake8", "pytest"],
     },
     entry_points={
         "console_scripts": [
