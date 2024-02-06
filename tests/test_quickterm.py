@@ -70,6 +70,35 @@ def test_execute_term_auto(
     execvp.assert_has_calls([call("roxterm", ANY)])
 
 
+def test_execute_term_custom_format(
+    i3ipc_connection, i3ipc_con, conf, execvp, shutil_roxterm_only
+):
+    """Auto-detect and execute term"""
+    conf["term"] = "roxterm -t {title} -e {expanded}"
+    i3ipc_con.find_marked.return_value = []
+
+    qt = Quickterm(conf, "shell")
+
+    qt.execute_term()
+
+    execvp.assert_has_calls([call("roxterm", ANY)])
+
+
+def test_execute_term_config(
+    i3ipc_connection, i3ipc_con, conf, execvp, shutil_roxterm_only
+):
+    """Auto-detect and execute term"""
+    conf["term"] = "auto"
+    conf["_config"] = "dummy"
+    i3ipc_con.find_marked.return_value = []
+
+    qt = Quickterm(conf, "shell")
+
+    qt.execute_term()
+
+    execvp.assert_has_calls([call("roxterm", ANY)])
+
+
 def test_toggle_hide(i3ipc_connection, conf, execvp):
     """Toggle with visible term: hide"""
     qt = Quickterm(conf, "shell")
@@ -80,6 +109,16 @@ def test_toggle_hide(i3ipc_connection, conf, execvp):
         "[con_id=0] floating enable, move scratchpad"
     )
     assert execvp.call_count == 0
+
+
+def test_con_in_workspace(i3ipc_connection, i3ipc_con, i3ipc_workspace, conf):
+    qt = Quickterm(conf, None)
+
+    assert qt.con_in_workspace("") is not None
+
+    i3ipc_workspace.find_marked.return_value = []
+
+    assert qt.con_in_workspace("") is None
 
 
 def test_toggle_from_other_workspace(i3ipc_connection, i3ipc_con, conf, execvp):

@@ -39,15 +39,21 @@ def conf_file_factory(tmp_path):
 
 
 @pytest.fixture
-def i3ipc_con():
+def i3ipc_workspace():
+    ws = unittest.mock.MagicMock()
+    ws.name = "ws"
+    ws.rect = i3ipc.Rect({"x": 0, "y": 0, "height": 0, "width": 0})
+    return ws
+
+
+@pytest.fixture
+def i3ipc_con(i3ipc_workspace):
     con = unittest.mock.Mock(i3ipc.Con)
     con.find_marked.return_value = [con]
     con.find_focused.return_value = con
     con.id = "0"
-    ws = unittest.mock.MagicMock()
-    con.workspace.return_value = ws
-    ws.name = "ws"
-    ws.rect = i3ipc.Rect({"x": 0, "y": 0, "height": 0, "width": 0})
+    con.workspace.return_value = i3ipc_workspace
+    i3ipc_workspace.find_marked.return_value = [con]
     return con
 
 
