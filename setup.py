@@ -56,7 +56,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "i3-quickterm=i3_quickterm:main",
+            "i3-quickterm=i3_quickterm:run_main",
         ],
     },
     project_urls={
