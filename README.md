@@ -19,7 +19,7 @@ Via pip:
 pip install i3-quickterm
 ```
 
-Or check the the repology badge above to check if it is packaged by your distribution.
+Or check the the repology badge above to see if it is packaged by your distribution.
 
 ## Usage
 
