@@ -7,7 +7,7 @@ import pytest
 import unittest.mock
 from unittest.mock import ANY
 
-DEFAULT_WITH_VERBOSE = {"_verbose": False}
+DEFAULT_WITH_VERBOSE: dict[str, object] = {"_verbose": False}
 DEFAULT_WITH_VERBOSE.update(DEFAULT_CONF)
 
 

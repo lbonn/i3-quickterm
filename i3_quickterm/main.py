@@ -230,10 +230,10 @@ class Quickterm:
     def __init__(self, conf: Conf, shell: Optional[str]):
         self.conf = conf
         self.shell = shell
-        self._ws = None
+        self._ws: Optional[i3ipc.Con] = None
         self._ws_fetched = False
-        self._conn = None
-        self._con = None
+        self._conn: Optional[i3ipc.Connection] = None
+        self._con: Optional[i3ipc.Con] = None
         self._con_fetched = False
         self._verbose = self.conf.get("_verbose", False)
 
@@ -303,9 +303,11 @@ class Quickterm:
 
     def toggle_on_current_ws(self):
         """If on another workspace: hide, otherwise show on current"""
+        assert self.con is not None
         move_to_scratchpad(self.conn, f"[con_id={self.con.id}]")
 
-        if self.ws is not None and self.con.workspace().name != self.ws.name:
+        qt_ws = self.con.workspace()
+        if self.ws is not None and (qt_ws is None or qt_ws.name != self.ws.name):
             self.focus_on_current_ws()
 
     def focus_on_current_ws(self):
@@ -337,6 +339,8 @@ class Quickterm:
 
     def execute_term(self):
         """Launch i3-quickterm in a new terminal"""
+        assert self.shell is not None
+
         term = select_terminal(self.conf["term"])
         qt_cmd = f"{sys.argv[0]} -i {self.shell}"
         if self._verbose:

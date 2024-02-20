@@ -15,6 +15,9 @@ runs:
     - id: flake8
       shell: bash
       run: flake8 i3_quickterm tests
+    - id: mypy
+      shell: bash
+      run: mypy i3_quickterm tests
     - id: pytest
       shell: bash
       run: |
