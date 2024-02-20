@@ -17,7 +17,7 @@ def conf(tmp_path):
             "menu": "/bin/true",
             "term": "xterm",
             "shells": {"shell": "bash"},
-            "history": f"{str(tmp_path / 'shells.order')}",
+            "history": str(tmp_path / "shells.order"),
         }
     )
     return c

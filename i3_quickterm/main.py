@@ -120,8 +120,7 @@ def read_conf(fn) -> Conf:
 
     try:
         with open(fn, "r") as f:
-            c = json.load(f)
-        return c
+            return json.load(f)
     except Exception as e:
         print(f"invalid config file: {e}", file=sys.stderr)
         return {}
@@ -157,7 +156,8 @@ def select_terminal(term_fmt: str) -> str:
             f"Could not find a suitable terminal "
             f"in the predefined list: {sorted(TERMS.keys())}"
         )
-    elif term_fmt in TERMS:
+
+    if term_fmt in TERMS:
         # one of the pre-configured terminals
         return cast(str, TERMS.get(term_fmt))
 
@@ -433,5 +433,5 @@ if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv[1:]))
     except Exception:
-        print(traceback.format_exc())
+        print(traceback.format_exc(), file=sys.stderr)
         sys.exit(1)
