@@ -38,7 +38,7 @@ def test_launch_inplace(i3ipc_connection, conf, execvp):
             call("mark quickterm_shell"),
             call(
                 "[con_mark=quickterm_shell] move scratchpad, scratchpad show, "
-                "resize set 0 px 0 px, move absolute position 0px 0px"
+                "resize set 0 0 px, move absolute position 0 0 px"
             ),
         ]
     )
@@ -144,7 +144,7 @@ def test_toggle_from_other_workspace(i3ipc_connection, i3ipc_con, conf, execvp):
             call("[con_id=0] floating enable, move scratchpad"),
             call(
                 "[con_mark=quickterm_shell] move scratchpad, scratchpad show, "
-                "resize set 0 px 0 px, move absolute position 0px 0px"
+                "resize set 0 0 px, move absolute position 0 0 px"
             ),
         ]
     )

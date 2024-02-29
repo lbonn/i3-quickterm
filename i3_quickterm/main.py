@@ -206,8 +206,8 @@ def select_shell(conf: Conf) -> Optional[str]:
         return shell
 
 
-def move_to_scratchpad(conn: i3ipc.Connection, selector: str):
-    conn.command(f"{selector} floating enable, move scratchpad")
+def move_to_scratchpad(conn: i3ipc.Connection, con: i3ipc.Con):
+    conn.command(f"[con_id={con.id}] floating enable, move scratchpad")
 
 
 def get_current_workspace(conn: i3ipc.Connection):
@@ -304,7 +304,7 @@ class Quickterm:
     def toggle_on_current_ws(self):
         """If on another workspace: hide, otherwise show on current"""
         assert self.con is not None
-        move_to_scratchpad(self.conn, f"[con_id={self.con.id}]")
+        move_to_scratchpad(self.conn, self.con)
 
         qt_ws = self.con.workspace()
         if self.ws is not None and (qt_ws is None or qt_ws.name != self.ws.name):
@@ -333,8 +333,8 @@ class Quickterm:
             f"[con_mark={self.mark}] "
             f"move scratchpad, "
             f"scratchpad show, "
-            f"resize set {width} px {height} px, "
-            f"move absolute position {posx}px {posy}px"
+            f"resize set {width} {height} px, "
+            f"move absolute position {posx} {posy} px"
         )
 
     def execute_term(self):
@@ -373,7 +373,7 @@ def run_qt(qt: Quickterm, in_place: bool = False):
         c = qt.con_in_workspace(MARK_QT_PATTERN)
         if c is not None:
             # undefined shell and visible on workspace: hide
-            move_to_scratchpad(qt.conn, f"[con_id={c.id}]")
+            move_to_scratchpad(qt.conn, c)
             return
 
         # undefined shell and nothing on workspace: ask for shell selection
