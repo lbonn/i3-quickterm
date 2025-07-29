@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=lbonn&project=i3-quickterm&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # i3-quickterm
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/python:i3-quickterm.svg)](https://repology.org/project/python:i3-quickterm/versions)
